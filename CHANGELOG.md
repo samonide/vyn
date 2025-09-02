@@ -5,17 +5,26 @@ All notable changes to Vyn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - v1.0.1-dev
+## [Unreleased] v1.0.1-dev
 
 ### Added
-- **Dry Run Mode** (`--dry-run`) - Preview operations without executing them
-- **Auto Directory Creation** - Automatically create missing output directories
+- **Dry Run Mode** - Preview operations without modifying files using `--dry-run` flag
+- **Size Estimation** - Intelligent file size prediction based on compression ratios
+- **Auto Directory Creation** - Automatically creates output directories if they don't exist
 - **Enhanced File Format Support** - Added support for MOV, FLV, and 3GP formats
 - **Better Error Handling** - Improved error messages and file validation
 - **Enhanced Codec Selection** - More intelligent codec selection based on output format
+- **Timing Information** - Shows conversion duration for completed operations
+- **File Size Comparison** - Displays before/after file sizes with compression ratios
+- **Format Validation** - Warns users about potentially unsupported file formats
+- **Progress Indicators** - Better visual feedback during file analysis and conversion
+- **Human-Readable File Sizes** - Automatic conversion to KB/MB/GB formats
 
 ### Improved
 - **File Information Display** - Better handling of empty or corrupted files
+- **FFmpeg Output** - Cleaner progress display with -hide_banner and improved logging levels
+- **User Experience** - More informative feedback throughout the conversion process
+- **Error Recovery** - Better handling of edge cases in strict mode
 - **User Experience** - More informative preview and confirmation dialogs
 - **Cross-Platform Compatibility** - Better handling of various file systems
 
