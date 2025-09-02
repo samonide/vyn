@@ -11,7 +11,7 @@ set -euo pipefail
 
 # Script information
 readonly SCRIPT_NAME="install-vyn"
-readonly VERSION="1.0.0"
+readonly VERSION="1.0.1-dev"
 readonly REPOSITORY="https://github.com/samonide/vyn"
 
 # Terminal color codes

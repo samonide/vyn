@@ -5,6 +5,24 @@ All notable changes to Vyn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - v1.0.1-dev
+
+### Added
+- **Dry Run Mode** (`--dry-run`) - Preview operations without executing them
+- **Auto Directory Creation** - Automatically create missing output directories
+- **Enhanced File Format Support** - Added support for MOV, FLV, and 3GP formats
+- **Better Error Handling** - Improved error messages and file validation
+- **Enhanced Codec Selection** - More intelligent codec selection based on output format
+
+### Improved
+- **File Information Display** - Better handling of empty or corrupted files
+- **User Experience** - More informative preview and confirmation dialogs
+- **Cross-Platform Compatibility** - Better handling of various file systems
+
+### Fixed
+- **Directory Validation** - Fixed issues with non-existent output directories
+- **File Extension Handling** - Case-insensitive file extension processing
+
 ## [1.0.0] - 2025-09-02
 
 ### Added
