@@ -227,13 +227,26 @@ get_file_info() {
         return 0
     fi
     
+    # For dry run mode, if ffprobe fails, show basic info and continue
+    if [[ "$DRY_RUN" == true ]]; then
+        local file_info
+        file_info=$(ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null)
+        if [[ -z "$file_info" ]]; then
+            echo "  📄 File: $(basename "$file")"
+            echo "  💾 Size: $(ls -lh "$file" | awk '{print $5}')"
+            echo "  ℹ️  Note: Not a valid video file (test file for dry run)"
+            echo ""
+            return 0
+        fi
+    fi
+    
     # Try to get detailed info with jq, fallback to basic info if jq fails
     if command -v jq &> /dev/null; then
         local file_info
         file_info=$(ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null)
         
         if [[ -n "$file_info" ]]; then
-            echo "$file_info" | jq -r '
+            if ! echo "$file_info" | jq -r '
                 .format as $fmt |
                 (.streams[] | select(.codec_type=="video")) as $video |
                 (.streams[] | select(.codec_type=="audio")) as $audio |
@@ -243,7 +256,9 @@ get_file_info() {
                 "  💾 Size: " + (if $fmt.size then (($fmt.size | tonumber / 1024 / 1024) | floor | tostring) + " MB" else "Unknown" end) + "\n" +
                 (if $video then "  🎬 Video: " + $video.codec_name + " | " + ($video.width | tostring) + "x" + ($video.height | tostring) + " | " + (if $video.r_frame_rate then (($video.r_frame_rate | split("/") | (.[0] | tonumber) / (.[1] | tonumber)) | floor | tostring) + " fps" else "Unknown fps" end) else "  🎬 Video: No video stream found" end) +
                 (if $audio then "\n  🔊 Audio: " + $audio.codec_name + " | " + ($audio.channels | tostring) + " channels" else "\n  🔊 Audio: No audio stream found" end)
-            ' 2>/dev/null || print_fallback_info "$file"
+            ' 2>/dev/null; then
+                print_fallback_info "$file"
+            fi
         else
             print_fallback_info "$file"
         fi
@@ -362,7 +377,68 @@ select_quality() {
     fi
 }
 
-# Function to perform remux
+# Function to estimate output file size for dry run
+estimate_output_size() {
+    local input="$1"
+    local operation_mode="$2"
+    local crf_value="$3"
+    local output_ext="$4"
+    
+    if [[ ! -s "$input" ]]; then
+        echo "Unknown (empty test file)"
+        return 0
+    fi
+    
+    local input_size
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        input_size=$(stat -f%z "$input" 2>/dev/null || echo "0")
+    else
+        input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    fi
+    
+    if [[ "$input_size" -eq 0 ]]; then
+        echo "Unknown"
+        return 0
+    fi
+    
+    local estimated_size=$input_size
+    
+    if [[ "$operation_mode" == "remux" ]]; then
+        # Remux: size usually stays very similar (±5%)
+        estimated_size=$input_size
+        echo "~$(( input_size / 1024 / 1024 )) MB (similar to input)"
+    else
+        # Encode: estimate based on CRF value and format using bash arithmetic
+        local compression_percent
+        case "$output_ext" in
+            "webm")
+                # WebM with VP9 is generally more efficient
+                case "$crf_value" in
+                    1[0-8]) compression_percent=70 ;;  # High quality - 70% of original
+                    1[9-5]) compression_percent=50 ;;  # Good quality - 50% of original
+                    2[6-2]) compression_percent=35 ;;  # Medium quality - 35% of original
+                    *) compression_percent=25 ;;       # Low quality - 25% of original
+                esac
+                ;;
+            *)
+                # H.264 compression estimates
+                case "$crf_value" in
+                    1[0-8]) compression_percent=80 ;;  # High quality - 80% of original
+                    1[9-5]) compression_percent=60 ;;  # Good quality - 60% of original
+                    2[6-2]) compression_percent=40 ;;  # Medium quality - 40% of original
+                    *) compression_percent=30 ;;       # Low quality - 30% of original
+                esac
+                ;;
+        esac
+        
+        estimated_size=$(( input_size * compression_percent / 100 ))
+        local estimated_mb=$((estimated_size / 1024 / 1024))
+        local input_mb=$((input_size / 1024 / 1024))
+        local savings=$(( 100 - compression_percent ))
+        
+        echo "~${estimated_mb} MB (estimated ${savings}% smaller)"
+    fi
+}
 do_remux() {
     local input="$1"
     local output="$2"
@@ -373,6 +449,12 @@ do_remux() {
         print_info "📊 Operation: Copy streams without re-encoding"
         print_info "⚡ Expected speed: Very fast (seconds)"
         print_info "🎯 Quality: Identical to source"
+        
+        # Show estimated output size
+        local output_ext="${output##*.}"
+        output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+        local estimated_size=$(estimate_output_size "$input" "remux" "" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
         return 0
     fi
     
@@ -460,6 +542,10 @@ do_encode() {
         if [[ -n "$extra_params" ]]; then
             print_info "🔧 Extra parameters: $extra_params"
         fi
+        
+        # Show estimated output size
+        local estimated_size=$(estimate_output_size "$input" "encode" "$CRF_VALUE" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
         return 0
     fi
     
