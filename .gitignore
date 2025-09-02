@@ -1,0 +1,83 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Test files
+test_video.*
+sample_*.*
+*.test.*
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# FFmpeg temporary files
+ffmpeg_*
+*.ffmpeg
+vyn_temp*
+
+# Output files from testing
+output/
+converted/
+test_output/
+vyn_output/
+converted_videos/
+
+# Local environment files
+.env
+.env.local
+
+# Build artifacts
+dist/
+build/
+
+# Package files
+*.deb
+*.rpm
+*.pkg
+*.dmg
+
+# Archive files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+
+# Video files (for testing)
+# Uncomment if you don't want to track test videos
+# *.mp4
+# *.mkv
+# *.avi
+# *.mov
+# *.webm
+# *.flv
+# *.wmv
+# *.m4v

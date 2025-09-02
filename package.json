@@ -1,0 +1,61 @@
+{
+  "name": "vyn",
+  "version": "1.0.0",
+  "description": "Vyn - A powerful, fast, and intuitive video format converter using FFmpeg with interactive CLI",
+  "main": "vyn",
+  "scripts": {
+    "install": "./install-vyn.sh",
+    "test": "echo 'No tests specified yet'",
+    "help": "./vyn --help",
+    "version": "./vyn --version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samonide/vyn.git"
+  },
+  "keywords": [
+    "vyn",
+    "video",
+    "converter",
+    "ffmpeg",
+    "cli",
+    "bash",
+    "shell",
+    "multimedia",
+    "encoding",
+    "remux",
+    "transcode",
+    "fast",
+    "intuitive"
+  ],
+  "author": "samonide",
+  "license": "Unlicense",
+  "bugs": {
+    "url": "https://github.com/samonide/vyn/issues"
+  },
+  "homepage": "https://github.com/samonide/vyn#readme",
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "engines": {
+    "bash": ">=4.0.0"
+  },
+  "dependencies": {
+    "ffmpeg": "Required for video processing",
+    "jq": "Optional but recommended for enhanced file information"
+  },
+  "config": {
+    "platforms": [
+      "Arch Linux",
+      "Ubuntu",
+      "Debian",
+      "Fedora",
+      "CachyOS",
+      "openSUSE",
+      "macOS",
+      "Windows (WSL)"
+    ]
+  }
+}
