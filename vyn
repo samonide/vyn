@@ -27,7 +27,7 @@ trap 'cleanup' INT TERM
 
 # Script information
 readonly SCRIPT_NAME="vyn"
-readonly VERSION="1.0.1-dev"
+readonly VERSION="1.0.1"
 readonly AUTHOR="samonide"
 readonly REPOSITORY="https://github.com/samonide/vyn"
 
