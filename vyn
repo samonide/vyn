@@ -27,7 +27,7 @@ trap 'cleanup' INT TERM
 
 # Script information
 readonly SCRIPT_NAME="vyn"
-readonly VERSION="1.0.0"
+readonly VERSION="1.0.1"
 readonly AUTHOR="samonide"
 readonly REPOSITORY="https://github.com/samonide/vyn"
 
@@ -35,6 +35,7 @@ readonly REPOSITORY="https://github.com/samonide/vyn"
 declare -g OPERATION_MODE=""
 declare -g CRF_VALUE=""
 declare -g USE_COLOR=true
+declare -g DRY_RUN=false
 
 # Function to initialize colors based on USE_COLOR setting
 init_colors() {
@@ -61,6 +62,68 @@ init_colors() {
 
 # Initialize colors
 init_colors
+
+# Simple progress indicator
+show_progress() {
+    local message="$1"
+    local pid="$2"
+    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local i=0
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r%s %s" "${chars:$i:1}" "$message"
+        i=$(( (i+1) % ${#chars} ))
+        sleep 0.1
+    done
+    printf "\r%s %s\n" "✓" "$message"
+}
+
+# Enhanced progress bar with animation
+show_progress_bar() {
+    local message="$1"
+    local pid="$2"
+    local operation="${3:-Processing}"
+    
+    local spinner="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local blocks="▱▱▱▱▱▱▱▱▱▱"
+    local filled="█"
+    local i=0
+    local progress=0
+    local start_time=$(date +%s)
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+        
+        # Create animated progress bar
+        local bar=""
+        local filled_blocks=$((progress / 10))
+        
+        for ((j=0; j<10; j++)); do
+            if [[ $j -lt $filled_blocks ]]; then
+                bar+="${filled}"
+            elif [[ $j -eq $filled_blocks ]] && [[ $((i % 3)) -eq 0 ]]; then
+                bar+="▶"
+            else
+                bar+="▱"
+            fi
+        done
+        
+        # Display progress
+        printf "\r${CYAN}${spinner:$i:1}${NC} ${WHITE}${operation}:${NC} [${GREEN}${bar}${NC}] ${YELLOW}${elapsed}s${NC} ${message}"
+        
+        # Update counters
+        i=$(( (i+1) % ${#spinner} ))
+        progress=$(( (progress + 2) % 100 ))
+        sleep 0.2
+    done
+    
+    # Final success message
+    local final_time=$(date +%s)
+    local total_time=$((final_time - start_time))
+    local final_bar="${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}"
+    printf "\r${GREEN}✓${NC} ${WHITE}${operation} Complete:${NC} [${GREEN}${final_bar}${NC}] ${YELLOW}${total_time}s${NC} ${message}\n"
+}
 
 # Function to print colored output
 print_color() {
@@ -137,41 +200,60 @@ check_dependencies() {
 
 # Function to show help
 show_help() {
+    # Header with branding (matching version style)
     echo ""
-    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC} - ${CYAN}Video. Simplified.${NC}\n"
+    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC}\n"
+    printf "${CYAN}Video. Simplified.${NC}\n"
     echo ""
-    cat << EOF
-$(print_color $GREEN "USAGE:")
-  ${SCRIPT_NAME} [input_file] [output_file]
-  ${SCRIPT_NAME} [OPTIONS]
-
-$(print_color $GREEN "OPTIONS:")
-  -h, --help       Show this help message
-  -v, --version    Show version information and dependencies
-  --no-color       Disable colored output
-
-$(print_color $GREEN "EXAMPLES:")
-  ${SCRIPT_NAME} input.mkv output.mp4
-  ${SCRIPT_NAME} /path/to/video.avi /path/to/converted.webm
-  ${SCRIPT_NAME} movie.mov                    # Will prompt for output filename
-
-$(print_color $GREEN "SUPPORTED FORMATS:")
-  Input:  mkv, avi, mov, mp4, webm, flv, wmv, m4v, 3gp, ts, and more
-  Output: mp4, mkv, webm, avi, mov, m4v, and more
-
-$(print_color $GREEN "OPERATION MODES:")
-  Remux:   Fast container change (no re-encoding, preserves quality)
-  Encode:  Full conversion with quality options (slower, size optimization)
-
-$(print_color $GREEN "QUALITY PRESETS:")
-  High:    CRF 18 - Excellent quality, large files
-  Good:    CRF 23 - Great quality, balanced size (recommended)
-  Medium:  CRF 28 - Good quality, smaller files
-  Low:     CRF 32 - Acceptable quality, very small files
-  Custom:  Choose your own CRF value (0-51)
-
-$(print_color $BLUE "For more information, visit: ${REPOSITORY}")
-EOF
+    
+    # Usage section with visual hierarchy
+    printf "${GREEN}📋 Usage${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} [input_file] [output_file]${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} [OPTIONS]${NC}\n"
+    echo ""
+    
+    # Options with clean layout
+    printf "${GREEN}⚙️  Options${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}-h, --help${NC}       ${YELLOW}Show this help message${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}-v, --version${NC}    ${YELLOW}Show version and dependencies${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--no-color${NC}       ${YELLOW}Disable colored output${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}--dry-run${NC}        ${YELLOW}Preview operations safely${NC}\n"
+    echo ""
+    
+    # Examples section
+    printf "${GREEN}💡 Examples${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} input.mkv output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} /path/to/video.avi converted.webm${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} movie.mov${NC} ${YELLOW}# Prompts for output${NC}\n"
+    echo ""
+    
+    # Supported formats
+    printf "${GREEN}📁 Supported Formats${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Input:${NC}   ${YELLOW}mkv, avi, mov, mp4, webm, flv, wmv, m4v, 3gp, ts${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Output:${NC}  ${YELLOW}mp4, mkv, webm, avi, mov, m4v${NC}\n"
+    echo ""
+    
+    # Operation modes with icons
+    printf "${GREEN}🔄 Operation Modes${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}⚡ Remux:${NC}   ${YELLOW}Fast container change (preserves quality)${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}🎯 Encode:${NC}  ${YELLOW}Full conversion with quality control${NC}\n"
+    echo ""
+    
+    # Quality presets
+    printf "${GREEN}🎚️  Quality Presets${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}High:${NC}    ${YELLOW}CRF 18 - Excellent quality, large files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Good:${NC}    ${YELLOW}CRF 23 - Great quality, balanced (recommended)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Medium:${NC}  ${YELLOW}CRF 28 - Good quality, smaller files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Low:${NC}     ${YELLOW}CRF 32 - Acceptable quality, very small${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Custom:${NC}  ${YELLOW}Choose your own CRF value (0-51)${NC}\n"
+    echo ""
+    
+    # Footer with link
+    printf "${GREEN}🌐 More Information${NC}\n"
+    printf "${CYAN}└─${NC} ${BLUE}${REPOSITORY}${NC}\n"
+    echo ""
+    
+    printf "${GREEN}Made with ${RED}❤️ ${GREEN} for the community${NC}\n"
     echo ""
 }
 
@@ -216,13 +298,35 @@ get_file_info() {
     
     print_color "$CYAN" "📁 File Information:"
     
+    # Skip detailed analysis for dry run with empty/dummy files
+    if [[ "$DRY_RUN" == true ]] && [[ ! -s "$file" ]]; then
+        echo "  📄 File: $(basename "$file")"
+        echo "  💾 Size: Empty file (dry run test)"
+        print_info "Skipping detailed analysis for empty test file"
+        echo ""
+        return 0
+    fi
+    
+    # For dry run mode, if ffprobe fails, show basic info and continue
+    if [[ "$DRY_RUN" == true ]]; then
+        local file_info
+        file_info=$(ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null)
+        if [[ -z "$file_info" ]]; then
+            echo "  📄 File: $(basename "$file")"
+            echo "  💾 Size: $(ls -lh "$file" | awk '{print $5}')"
+            echo "  ℹ️  Note: Not a valid video file (test file for dry run)"
+            echo ""
+            return 0
+        fi
+    fi
+    
     # Try to get detailed info with jq, fallback to basic info if jq fails
     if command -v jq &> /dev/null; then
         local file_info
         file_info=$(ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null)
         
         if [[ -n "$file_info" ]]; then
-            echo "$file_info" | jq -r '
+            if ! echo "$file_info" | jq -r '
                 .format as $fmt |
                 (.streams[] | select(.codec_type=="video")) as $video |
                 (.streams[] | select(.codec_type=="audio")) as $audio |
@@ -232,7 +336,9 @@ get_file_info() {
                 "  💾 Size: " + (if $fmt.size then (($fmt.size | tonumber / 1024 / 1024) | floor | tostring) + " MB" else "Unknown" end) + "\n" +
                 (if $video then "  🎬 Video: " + $video.codec_name + " | " + ($video.width | tostring) + "x" + ($video.height | tostring) + " | " + (if $video.r_frame_rate then (($video.r_frame_rate | split("/") | (.[0] | tonumber) / (.[1] | tonumber)) | floor | tostring) + " fps" else "Unknown fps" end) else "  🎬 Video: No video stream found" end) +
                 (if $audio then "\n  🔊 Audio: " + $audio.codec_name + " | " + ($audio.channels | tostring) + " channels" else "\n  🔊 Audio: No audio stream found" end)
-            ' 2>/dev/null || print_fallback_info "$file"
+            ' 2>/dev/null; then
+                print_fallback_info "$file"
+            fi
         else
             print_fallback_info "$file"
         fi
@@ -246,18 +352,26 @@ get_file_info() {
 print_fallback_info() {
     local file="$1"
     echo "  📄 File: $(basename "$file")"
-    echo "  💾 Size: $(ls -lh "$file" | awk '{print $5}')"
     
-    if command -v ffprobe &> /dev/null; then
-        local duration
-        duration=$(ffprobe -v quiet -show_entries format=duration -of csv="p=0" "$file" 2>/dev/null)
-        if [[ -n "$duration" ]]; then
-            local seconds
-            seconds=$(echo "$duration" | awk '{print int($1)}')
-            local hours=$((seconds / 3600))
-            local minutes=$(((seconds % 3600) / 60))
-            local secs=$((seconds % 60))
-            printf "  ⏱️  Duration: %02d:%02d:%02d\n" "$hours" "$minutes" "$secs"
+    if [[ -s "$file" ]]; then
+        echo "  💾 Size: $(ls -lh "$file" | awk '{print $5}')"
+        
+        if command -v ffprobe &> /dev/null; then
+            local duration
+            duration=$(ffprobe -v quiet -show_entries format=duration -of csv="p=0" "$file" 2>/dev/null)
+            if [[ -n "$duration" ]]; then
+                local seconds
+                seconds=$(echo "$duration" | awk '{print int($1)}')
+                local hours=$((seconds / 3600))
+                local minutes=$(((seconds % 3600) / 60))
+                local secs=$((seconds % 60))
+                printf "  ⏱️  Duration: %02d:%02d:%02d\n" "$hours" "$minutes" "$secs"
+            fi
+        fi
+    else
+        echo "  💾 Size: Empty file"
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "  ℹ️  Note: This is a test file for dry run mode"
         fi
     fi
 }
@@ -343,22 +457,172 @@ select_quality() {
     fi
 }
 
-# Function to perform remux
+# Function to format file size in human readable format
+format_file_size() {
+    local size="$1"
+    
+    if [[ "$size" -eq 0 ]]; then
+        echo "0 B"
+    elif [[ "$size" -lt 1024 ]]; then
+        echo "${size} B"
+    elif [[ "$size" -lt $((1024*1024)) ]]; then
+        echo "$((size/1024)) KB"
+    elif [[ "$size" -lt $((1024*1024*1024)) ]]; then
+        echo "$((size/1024/1024)) MB"
+    else
+        echo "$((size/1024/1024/1024)) GB"
+    fi
+}
+
+# Function to validate file format compatibility
+validate_file_format() {
+    local input="$1"
+    local output="$2"
+    
+    # Get file extension
+    local input_ext="${input##*.}"
+    local output_ext="${output##*.}"
+    
+    # Convert to lowercase
+    input_ext=$(echo "$input_ext" | tr '[:upper:]' '[:lower:]')
+    output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+    
+    # Define supported input formats
+    local supported_input="mp4 mkv avi mov webm m4v flv 3gp wmv mpg mpeg ts"
+    local supported_output="mp4 mkv avi mov webm m4v"
+    
+    # Check input format
+    if [[ ! " $supported_input " =~ " $input_ext " ]]; then
+        print_warning "⚠️  Input format '.$input_ext' may not be fully supported"
+        print_info "Supported input formats: $supported_input"
+    fi
+    
+    # Check output format
+    if [[ ! " $supported_output " =~ " $output_ext " ]]; then
+        print_warning "⚠️  Output format '.$output_ext' may not be optimal"
+        print_info "Recommended output formats: $supported_output"
+    fi
+    
+    return 0
+}
+
+# Function to estimate output file size for dry run
+estimate_output_size() {
+    local input="$1"
+    local operation_mode="$2"
+    local crf_value="$3"
+    local output_ext="$4"
+    
+    if [[ ! -s "$input" ]]; then
+        echo "Unknown (empty test file)"
+        return 0
+    fi
+    
+    local input_size
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        input_size=$(stat -f%z "$input" 2>/dev/null || echo "0")
+    else
+        input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    fi
+    
+    if [[ "$input_size" -eq 0 ]]; then
+        echo "Unknown"
+        return 0
+    fi
+    
+    local estimated_size=$input_size
+    
+    if [[ "$operation_mode" == "remux" ]]; then
+        # Remux: size usually stays very similar (±5%)
+        estimated_size=$input_size
+        echo "~$(( input_size / 1024 / 1024 )) MB (similar to input)"
+    else
+        # Encode: estimate based on CRF value and format using bash arithmetic
+        local compression_percent
+        case "$output_ext" in
+            "webm")
+                # WebM with VP9 is generally more efficient
+                case "$crf_value" in
+                    1[0-8]) compression_percent=70 ;;  # High quality - 70% of original
+                    1[9-5]) compression_percent=50 ;;  # Good quality - 50% of original
+                    2[6-2]) compression_percent=35 ;;  # Medium quality - 35% of original
+                    *) compression_percent=25 ;;       # Low quality - 25% of original
+                esac
+                ;;
+            *)
+                # H.264 compression estimates
+                case "$crf_value" in
+                    1[0-8]) compression_percent=80 ;;  # High quality - 80% of original
+                    1[9-5]) compression_percent=60 ;;  # Good quality - 60% of original
+                    2[6-2]) compression_percent=40 ;;  # Medium quality - 40% of original
+                    *) compression_percent=30 ;;       # Low quality - 30% of original
+                esac
+                ;;
+        esac
+        
+        estimated_size=$(( input_size * compression_percent / 100 ))
+        local estimated_mb=$((estimated_size / 1024 / 1024))
+        local input_mb=$((input_size / 1024 / 1024))
+        local savings=$(( 100 - compression_percent ))
+        
+        echo "~${estimated_mb} MB (estimated ${savings}% smaller)"
+    fi
+}
 do_remux() {
     local input="$1"
     local output="$2"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "🔍 DRY RUN: Remux operation preview"
+        print_color "$CYAN" "Would execute: ffmpeg -i \"$input\" -c copy \"$output\""
+        print_info "📊 Operation: Copy streams without re-encoding"
+        print_info "⚡ Expected speed: Very fast (seconds)"
+        print_info "🎯 Quality: Identical to source"
+        
+        # Show estimated output size
+        local output_ext="${output##*.}"
+        output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+        local estimated_size=$(estimate_output_size "$input" "remux" "" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
+        return 0
+    fi
     
     print_info "🚀 Starting remux operation..."
     print_color "$CYAN" "Command: ffmpeg -i \"$input\" -c copy \"$output\""
     echo ""
     
-    # Use progress indicators for better UX
-    if ffmpeg -i "$input" -c copy "$output" -y -loglevel warning -stats; then
-        print_success "✅ Remux completed successfully!"
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
+    # Run FFmpeg in background with progress bar
+    ffmpeg -i "$input" -c copy "$output" -y -loglevel error -stats -hide_banner > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Remuxing"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        print_success "✅ Remux completed successfully in ${duration}s!"
+        
+        # Show file size comparison
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
     else
+        echo ""
         print_error "Remux operation failed!"
         print_info "This might happen if the codecs are not compatible with the output container."
         print_info "Try using encode mode instead."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
         exit 1
     fi
 }
@@ -396,16 +660,52 @@ do_encode() {
             video_codec="libx264"
             audio_codec="aac"
             ;;
+        "mov")
+            video_codec="libx264"
+            audio_codec="aac"
+            extra_params="-movflags +faststart"
+            ;;
+        "flv")
+            video_codec="libx264"
+            audio_codec="aac"
+            ;;
+        "3gp")
+            video_codec="libx264"
+            audio_codec="aac"
+            extra_params="-s 320x240"  # Mobile-friendly resolution
+            ;;
         *)
             video_codec="libx264"
             audio_codec="aac"
             print_warning "Unknown output format '$output_ext', using default codecs (H.264 + AAC)"
+            print_info "Supported formats: mp4, mkv, webm, avi, mov, flv, m4v, 3gp"
             ;;
     esac
     
     print_info "🎬 Starting encode operation..."
     print_color "$CYAN" "📼 Video Codec: $video_codec | 🔊 Audio Codec: $audio_codec | 🎯 CRF: $CRF_VALUE"
     print_color "$CYAN" "Command: ffmpeg -i \"$input\" -c:v $video_codec -crf $CRF_VALUE -c:a $audio_codec $extra_params \"$output\""
+    echo ""
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "🔍 DRY RUN: Encode operation preview"
+        print_info "📊 Video Codec: $video_codec (CRF $CRF_VALUE)"
+        print_info "🔊 Audio Codec: $audio_codec"
+        print_info "⚡ Expected speed: Depends on file size and system"
+        print_info "🎯 Quality: Based on CRF setting"
+        if [[ -n "$extra_params" ]]; then
+            print_info "🔧 Extra parameters: $extra_params"
+        fi
+        
+        # Show estimated output size
+        local estimated_size=$(estimate_output_size "$input" "encode" "$CRF_VALUE" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
+        return 0
+    fi
+    
+    # Show conversion progress indicator
+    print_info "🚀 Starting video encoding..."
+    print_info "📊 Monitor the progress below:"
     echo ""
     
     # Build the command with proper parameters
@@ -415,8 +715,9 @@ do_encode() {
         -crf "$CRF_VALUE"
         -c:a "$audio_codec"
         -y
-        -loglevel warning
+        -loglevel info
         -stats
+        -hide_banner
     )
     
     # Add extra parameters if any
@@ -427,13 +728,73 @@ do_encode() {
     
     cmd+=("$output")
     
-    if "${cmd[@]}"; then
-        print_success "✅ Encoding completed successfully!"
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
+    # Run FFmpeg in background with progress bar
+    "${cmd[@]}" -loglevel error -stats > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Encoding"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        print_success "✅ Encoding completed successfully in ${duration}s!"
+        
+        # Show file size comparison if input exists
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
     else
+        echo ""
         print_error "Encoding operation failed!"
         print_info "Check the error messages above for details."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
         exit 1
     fi
+}
+
+# Function to show file size comparison
+show_file_comparison() {
+    local input="$1"
+    local output="$2"
+    
+    echo ""
+    print_info "📊 File Size Comparison:"
+    
+    # Get file sizes
+    local input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    local output_size=$(stat -c%s "$output" 2>/dev/null || echo "0")
+    
+    # Convert to human readable format
+    local input_readable=$(format_file_size "$input_size")
+    local output_readable=$(format_file_size "$output_size")
+    
+    print_info "   Original:  $input_readable"
+    print_info "   Converted: $output_readable"
+    
+    # Calculate compression ratio if both sizes are available
+    if [[ "$input_size" -gt 0 && "$output_size" -gt 0 ]]; then
+        local ratio=$((output_size * 100 / input_size))
+        local savings=$((100 - ratio))
+        
+        if [[ $ratio -lt 100 ]]; then
+            print_success "   💾 Space saved: ${savings}%% (compression ratio: ${ratio}%%)"
+        else
+            local increase=$((ratio - 100))
+            print_warning "   📈 File size increased by ${increase}%%"
+        fi
+    fi
+    echo ""
 }
 
 # Function to show conversion summary
@@ -476,10 +837,10 @@ show_summary() {
                 
                 if [[ $size_diff -gt 0 ]]; then
                     local size_diff_mb=$((size_diff / 1024 / 1024))
-                    print_warning "  📈 Size change: +${percent_change}% (+${size_diff_mb}MB larger)"
+                    print_warning "  📈 Size change: +${percent_change}%% (+${size_diff_mb}MB larger)"
                 elif [[ $size_diff -lt 0 ]]; then
                     local size_diff_mb=$(( (-size_diff) / 1024 / 1024 ))
-                    print_success "  📉 Size change: ${percent_change}% (-${size_diff_mb}MB smaller)"
+                    print_success "  📉 Size change: ${percent_change}%% (-${size_diff_mb}MB smaller)"
                 else
                     print_info "  ➡️  Size change: No change"
                 fi
@@ -504,6 +865,10 @@ main() {
             --no-color)
                 USE_COLOR=false
                 init_colors
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
                 shift
                 ;;
             -*)
@@ -557,12 +922,20 @@ main() {
     local output_dir
     output_dir="$(dirname "$output_file")"
     if [[ ! -d "$output_dir" ]]; then
-        print_error "Output directory '$output_dir' does not exist!"
-        print_info "Please create the directory first or use a different path."
-        exit 1
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "Would create directory: $output_dir"
+        else
+            print_info "Creating output directory: $output_dir"
+            if ! mkdir -p "$output_dir" 2>/dev/null; then
+                print_error "Failed to create output directory '$output_dir'!"
+                print_info "Check parent directory permissions."
+                exit 1
+            fi
+            print_success "✅ Directory created successfully"
+        fi
     fi
     
-    if [[ ! -w "$output_dir" ]]; then
+    if [[ ! "$DRY_RUN" == true ]] && [[ ! -w "$output_dir" ]]; then
         print_error "Output directory '$output_dir' is not writable!"
         print_info "Check directory permissions."
         exit 1
@@ -582,6 +955,11 @@ main() {
     # Show file information
     get_file_info "$input_file"
     
+    # Validate file format compatibility
+    echo ""
+    validate_file_format "$input_file" "$output_file"
+    echo ""
+    
     # Select operation mode
     select_operation_mode
     
@@ -590,17 +968,31 @@ main() {
     
     # Confirm operation
     echo ""
-    print_color "$PURPLE" "🔧 Conversion Details:"
+    if [[ "$DRY_RUN" == true ]]; then
+        print_color "$BLUE" "🔍 DRY RUN - Preview Mode"
+    else
+        print_color "$PURPLE" "🔧 Conversion Details:"
+    fi
     echo "  📥 Input:     $input_file"
     echo "  📤 Output:    $output_file"
     echo "  ⚙️  Mode:      $OPERATION_MODE"
     if [[ "$OPERATION_MODE" == "encode" ]]; then
         echo "  🎯 Quality:   CRF $CRF_VALUE"
     fi
-    echo ""
-    read -r -p "Proceed with conversion? (Y/n): " confirm
+    if [[ "$DRY_RUN" == true ]]; then
+        echo ""
+        print_info "This is a preview - no files will be modified"
+        read -r -p "Continue with preview? (Y/n): " confirm
+    else
+        echo ""
+        read -r -p "Proceed with conversion? (Y/n): " confirm
+    fi
     if [[ "$confirm" =~ ^[Nn]$ ]]; then
-        print_info "Conversion cancelled."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "Preview cancelled."
+        else
+            print_info "Conversion cancelled."
+        fi
         exit 0
     fi
     
@@ -608,11 +1000,18 @@ main() {
     local start_time
     start_time=$(date +%s)
     
-    # Perform conversion
+    # Perform conversion or preview
     if [[ "$OPERATION_MODE" == "remux" ]]; then
         do_remux "$input_file" "$output_file"
     else
         do_encode "$input_file" "$output_file"
+    fi
+    
+    # Skip summary and timing for dry run
+    if [[ "$DRY_RUN" == true ]]; then
+        print_success "🔍 Dry run completed successfully!"
+        print_info "Use the same command without --dry-run to perform the actual conversion."
+        exit 0
     fi
     
     # Calculate duration

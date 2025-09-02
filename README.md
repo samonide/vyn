@@ -5,7 +5,7 @@
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![FFmpeg](https://img.shields.io/badge/Powered%20by-FFmpeg-orange.svg)](https://ffmpeg.org/)
-[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/samonide/vyn/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-brightgreen.svg)](https://github.com/samonide/vyn/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)]()
 [![Made by](https://img.shields.io/badge/made%20by-samonide-red.svg)](https://github.com/samonide)
 
@@ -31,12 +31,31 @@ vyn movie.mkv movie.mp4
   - **Remux**: Lightning-fast container format changes (no re-encoding)
   - **Encode**: Full conversion with quality control and size optimization
 - **🎯 Interactive CLI**: User-friendly prompts for all conversion options
-- **📊 Quality Control**: Multiple presets (High, Good, Medium, Low) plus custom CRF values
-- **📁 Wide Format Support**: MP4, MKV, WebM, AVI, MOV, and many more
+- **� Dry Run Mode**: Preview operations safely without modifying files
+- **⚡ Animated Progress Bars**: Beautiful real-time progress indicators during conversion
+- **�📊 Quality Control**: Multiple presets (High, Good, Medium, Low) plus custom CRF values
+- **📁 Wide Format Support**: MP4, MKV, WebM, AVI, MOV, FLV, 3GP, and many more
 - **🌍 Cross-Platform**: Works on Linux, macOS, and Windows (with WSL)
-- **📈 Progress Tracking**: Real-time conversion progress and detailed summaries
-- **🎨 Colored Output**: Beautiful, readable terminal interface
-- **⚡ Smart Codec Detection**: Automatically selects optimal codecs for each format
+- **📈 Advanced Analytics**: File size comparisons, compression ratios, and timing information
+- **🎨 Professional Interface**: Beautiful, color-coded terminal output with icons
+- **⚡ Smart Features**: Auto-directory creation, format validation, and intelligent codec selection
+- **🛡️ Robust Error Handling**: Better validation and recovery from edge cases
+
+## 🆕 What's New in v1.0.1
+
+**Enhanced User Experience:**
+- **🎨 Beautiful Interface**: Professional styling with consistent design across help and version outputs
+- **⚡ Animated Progress Bars**: Real-time visual feedback with spinners and progress indicators
+- **🔍 Dry Run Mode**: Safe preview of operations with `--dry-run` flag
+- **📊 Smart Analytics**: File size comparisons, compression ratios, and conversion timing
+
+**Developer Quality Features:**
+- **🎯 Format Validation**: Intelligent warnings for potentially unsupported formats
+- **📁 Auto-Directory Creation**: Automatic creation of output directories
+- **🛡️ Enhanced Error Handling**: Better validation and error recovery
+- **💾 Human-Readable Sizes**: Automatic formatting of file sizes (KB/MB/GB)
+
+> 🚀 **Try it now**: `vyn --dry-run input.mp4 output.webm` to see the new preview mode!
 
 ## 📁 Project Structure
 
@@ -320,14 +339,13 @@ chmod +x vyn
 
 ## 📋 TODO - Future Plans
 
-### 🔥 Upcoming Features (v1.1.0)
+### 🔥 Upcoming Features (v1.2.0)
 - [ ] **Batch Processing Mode** - Convert multiple files with one command
 - [ ] **Configuration File** - Save preferred settings (quality, format, etc.)
-- [ ] **Progress Bar** - Visual progress indicator during conversion
 - [ ] **GPU Acceleration** - NVENC/VAAPI support for faster encoding
 - [ ] **Audio-only Mode** - Extract and convert audio tracks separately
 
-### 🚀 Advanced Features (v1.2.0)
+### 🚀 Advanced Features (v1.3.0)
 - [ ] **Subtitle Handling** - Preserve, extract, or burn-in subtitles
 - [ ] **Video Filters** - Basic filters (resize, crop, rotate)
 - [ ] **Preset Management** - Create and save custom encoding presets
@@ -341,10 +359,18 @@ chmod +x vyn
 - [ ] **Plugin System** - Custom filters and codecs
 - [ ] **Distributed Processing** - Multi-machine encoding support
 
+### ✅ Recently Completed (v1.0.1)
+- [x] **Progress Bar** - ✨ Beautiful animated progress indicators
+- [x] **Dry Run Mode** - ✨ Safe preview without file modification
+- [x] **Enhanced UI** - ✨ Professional styling and visual hierarchy
+- [x] **Format Validation** - ✨ Smart warnings for unsupported formats
+- [x] **Auto Directory Creation** - ✨ Automatic output folder creation
+- [x] **File Size Analytics** - ✨ Compression ratios and comparisons
+- [x] **Better Error Handling** - ✨ Robust validation and recovery
+
 ### 🔧 Technical Improvements
 - [ ] **Unit Tests** - Comprehensive testing suite
 - [ ] **Performance Profiling** - Optimize bottlenecks
-- [ ] **Error Recovery** - Better handling of corrupted files
 - [ ] **Logging System** - Detailed conversion logs
 - [ ] **Docker Support** - Containerized deployment
 
