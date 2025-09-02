@@ -8,23 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] v1.0.1-dev
 
 ### Added
-- **Dry Run Mode** - Preview operations without modifying files using `--dry-run` flag
-- **Size Estimation** - Intelligent file size prediction based on compression ratios
-- **Auto Directory Creation** - Automatically creates output directories if they don't exist
-- **Enhanced File Format Support** - Added support for MOV, FLV, and 3GP formats
-- **Better Error Handling** - Improved error messages and file validation
-- **Enhanced Codec Selection** - More intelligent codec selection based on output format
-- **Timing Information** - Shows conversion duration for completed operations
-- **File Size Comparison** - Displays before/after file sizes with compression ratios
-- **Format Validation** - Warns users about potentially unsupported file formats
-- **Progress Indicators** - Better visual feedback during file analysis and conversion
-- **Human-Readable File Sizes** - Automatic conversion to KB/MB/GB formats
+- **🎨 Beautiful Help System** - Redesigned help output with professional styling to match version output
+- **⚡ Animated Progress Bars** - Real-time progress indicators during encoding and remuxing operations
+- **🔍 Dry Run Mode** - Preview operations without modifying files using `--dry-run` flag
+- **📊 Size Estimation** - Intelligent file size prediction based on compression ratios
+- **📁 Auto Directory Creation** - Automatically creates output directories if they don't exist
+- **🎬 Enhanced File Format Support** - Added support for MOV, FLV, and 3GP formats
+- **🛡️ Better Error Handling** - Improved error messages and file validation
+- **🎯 Enhanced Codec Selection** - More intelligent codec selection based on output format
+- **⏱️ Timing Information** - Shows conversion duration for completed operations
+- **📊 File Size Comparison** - Displays before/after file sizes with compression ratios
+- **⚠️ Format Validation** - Warns users about potentially unsupported file formats
+- **🎚️ Progress Indicators** - Better visual feedback during file analysis and conversion
+- **💾 Human-Readable File Sizes** - Automatic conversion to KB/MB/GB formats
 
 ### Improved
-- **File Information Display** - Better handling of empty or corrupted files
-- **FFmpeg Output** - Cleaner progress display with -hide_banner and improved logging levels
-- **User Experience** - More informative feedback throughout the conversion process
-- **Error Recovery** - Better handling of edge cases in strict mode
+- **🎨 User Interface** - Professional styling with icons, color coding, and visual hierarchy
+- **📋 Help Output** - Tree-structured layout with clear sections and examples
+- **🔄 Progress Feedback** - Animated spinners and progress bars for better user experience
+- **📁 File Information Display** - Better handling of empty or corrupted files
+- **🖥️ FFmpeg Output** - Cleaner progress display with improved logging levels
+- **🐛 Error Recovery** - Better handling of edge cases in strict mode
+- **💬 User Experience** - More informative feedback throughout the conversion process
+
+### Fixed
+- **🐛 Printf Formatting** - Resolved percentage symbol formatting issues in output messages
+- **🧹 Cleanup** - Better temporary file management and error handling
+- **⚡ Performance** - Optimized progress display and reduced overhead
 - **User Experience** - More informative preview and confirmation dialogs
 - **Cross-Platform Compatibility** - Better handling of various file systems
 
