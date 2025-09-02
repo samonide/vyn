@@ -78,6 +78,53 @@ show_progress() {
     printf "\r%s %s\n" "✓" "$message"
 }
 
+# Enhanced progress bar with animation
+show_progress_bar() {
+    local message="$1"
+    local pid="$2"
+    local operation="${3:-Processing}"
+    
+    local spinner="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local blocks="▱▱▱▱▱▱▱▱▱▱"
+    local filled="█"
+    local i=0
+    local progress=0
+    local start_time=$(date +%s)
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        local current_time=$(date +%s)
+        local elapsed=$((current_time - start_time))
+        
+        # Create animated progress bar
+        local bar=""
+        local filled_blocks=$((progress / 10))
+        
+        for ((j=0; j<10; j++)); do
+            if [[ $j -lt $filled_blocks ]]; then
+                bar+="${filled}"
+            elif [[ $j -eq $filled_blocks ]] && [[ $((i % 3)) -eq 0 ]]; then
+                bar+="▶"
+            else
+                bar+="▱"
+            fi
+        done
+        
+        # Display progress
+        printf "\r${CYAN}${spinner:$i:1}${NC} ${WHITE}${operation}:${NC} [${GREEN}${bar}${NC}] ${YELLOW}${elapsed}s${NC} ${message}"
+        
+        # Update counters
+        i=$(( (i+1) % ${#spinner} ))
+        progress=$(( (progress + 2) % 100 ))
+        sleep 0.2
+    done
+    
+    # Final success message
+    local final_time=$(date +%s)
+    local total_time=$((final_time - start_time))
+    local final_bar="${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}${filled}"
+    printf "\r${GREEN}✓${NC} ${WHITE}${operation} Complete:${NC} [${GREEN}${final_bar}${NC}] ${YELLOW}${total_time}s${NC} ${message}\n"
+}
+
 # Function to print colored output
 print_color() {
     local color="$1"
@@ -153,42 +200,60 @@ check_dependencies() {
 
 # Function to show help
 show_help() {
+    # Header with branding (matching version style)
     echo ""
-    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC} - ${CYAN}Video. Simplified.${NC}\n"
+    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC}\n"
+    printf "${CYAN}Video. Simplified.${NC}\n"
     echo ""
-    cat << EOF
-$(print_color $GREEN "USAGE:")
-  ${SCRIPT_NAME} [input_file] [output_file]
-  ${SCRIPT_NAME} [OPTIONS]
-
-$(print_color $GREEN "OPTIONS:")
-  -h, --help       Show this help message
-  -v, --version    Show version information and dependencies
-  --no-color       Disable colored output
-  --dry-run        Preview operations without executing them
-
-$(print_color $GREEN "EXAMPLES:")
-  ${SCRIPT_NAME} input.mkv output.mp4
-  ${SCRIPT_NAME} /path/to/video.avi /path/to/converted.webm
-  ${SCRIPT_NAME} movie.mov                    # Will prompt for output filename
-
-$(print_color $GREEN "SUPPORTED FORMATS:")
-  Input:  mkv, avi, mov, mp4, webm, flv, wmv, m4v, 3gp, ts, and more
-  Output: mp4, mkv, webm, avi, mov, m4v, and more
-
-$(print_color $GREEN "OPERATION MODES:")
-  Remux:   Fast container change (no re-encoding, preserves quality)
-  Encode:  Full conversion with quality options (slower, size optimization)
-
-$(print_color $GREEN "QUALITY PRESETS:")
-  High:    CRF 18 - Excellent quality, large files
-  Good:    CRF 23 - Great quality, balanced size (recommended)
-  Medium:  CRF 28 - Good quality, smaller files
-  Low:     CRF 32 - Acceptable quality, very small files
-  Custom:  Choose your own CRF value (0-51)
-
-$(print_color $BLUE "For more information, visit: ${REPOSITORY}")
-EOF
+    
+    # Usage section with visual hierarchy
+    printf "${GREEN}📋 Usage${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} [input_file] [output_file]${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} [OPTIONS]${NC}\n"
+    echo ""
+    
+    # Options with clean layout
+    printf "${GREEN}⚙️  Options${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}-h, --help${NC}       ${YELLOW}Show this help message${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}-v, --version${NC}    ${YELLOW}Show version and dependencies${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--no-color${NC}       ${YELLOW}Disable colored output${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}--dry-run${NC}        ${YELLOW}Preview operations safely${NC}\n"
+    echo ""
+    
+    # Examples section
+    printf "${GREEN}💡 Examples${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} input.mkv output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} /path/to/video.avi converted.webm${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} movie.mov${NC} ${YELLOW}# Prompts for output${NC}\n"
+    echo ""
+    
+    # Supported formats
+    printf "${GREEN}📁 Supported Formats${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Input:${NC}   ${YELLOW}mkv, avi, mov, mp4, webm, flv, wmv, m4v, 3gp, ts${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Output:${NC}  ${YELLOW}mp4, mkv, webm, avi, mov, m4v${NC}\n"
+    echo ""
+    
+    # Operation modes with icons
+    printf "${GREEN}🔄 Operation Modes${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}⚡ Remux:${NC}   ${YELLOW}Fast container change (preserves quality)${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}🎯 Encode:${NC}  ${YELLOW}Full conversion with quality control${NC}\n"
+    echo ""
+    
+    # Quality presets
+    printf "${GREEN}🎚️  Quality Presets${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}High:${NC}    ${YELLOW}CRF 18 - Excellent quality, large files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Good:${NC}    ${YELLOW}CRF 23 - Great quality, balanced (recommended)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Medium:${NC}  ${YELLOW}CRF 28 - Good quality, smaller files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Low:${NC}     ${YELLOW}CRF 32 - Acceptable quality, very small${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Custom:${NC}  ${YELLOW}Choose your own CRF value (0-51)${NC}\n"
+    echo ""
+    
+    # Footer with link
+    printf "${GREEN}🌐 More Information${NC}\n"
+    printf "${CYAN}└─${NC} ${BLUE}${REPOSITORY}${NC}\n"
+    echo ""
+    
+    printf "${GREEN}Made with ${RED}❤️ ${GREEN} for the community${NC}\n"
     echo ""
 }
 
@@ -529,11 +594,20 @@ do_remux() {
     # Record start time for timing
     local start_time=$(date +%s)
     
-    # Use progress indicators for better UX
-    if ffmpeg -i "$input" -c copy "$output" -y -loglevel info -stats -hide_banner; then
+    # Run FFmpeg in background with progress bar
+    ffmpeg -i "$input" -c copy "$output" -y -loglevel error -stats -hide_banner > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Remuxing"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
         local end_time=$(date +%s)
         local duration=$((end_time - start_time))
-        echo ""
         print_success "✅ Remux completed successfully in ${duration}s!"
         
         # Show file size comparison
@@ -541,9 +615,14 @@ do_remux() {
             show_file_comparison "$input" "$output"
         fi
     else
+        echo ""
         print_error "Remux operation failed!"
         print_info "This might happen if the codecs are not compatible with the output container."
         print_info "Try using encode mode instead."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
         exit 1
     fi
 }
@@ -652,10 +731,20 @@ do_encode() {
     # Record start time for timing
     local start_time=$(date +%s)
     
-    if "${cmd[@]}"; then
+    # Run FFmpeg in background with progress bar
+    "${cmd[@]}" -loglevel error -stats > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Encoding"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
         local end_time=$(date +%s)
         local duration=$((end_time - start_time))
-        echo ""
         print_success "✅ Encoding completed successfully in ${duration}s!"
         
         # Show file size comparison if input exists
@@ -663,8 +752,13 @@ do_encode() {
             show_file_comparison "$input" "$output"
         fi
     else
+        echo ""
         print_error "Encoding operation failed!"
         print_info "Check the error messages above for details."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
         exit 1
     fi
 }
@@ -694,9 +788,10 @@ show_file_comparison() {
         local savings=$((100 - ratio))
         
         if [[ $ratio -lt 100 ]]; then
-            print_success "   💾 Space saved: ${savings}% (compression ratio: ${ratio}%)"
+            print_success "   💾 Space saved: ${savings}%% (compression ratio: ${ratio}%%)"
         else
-            print_warning "   📈 File size increased by $((ratio - 100))%"
+            local increase=$((ratio - 100))
+            print_warning "   📈 File size increased by ${increase}%%"
         fi
     fi
     echo ""
@@ -742,10 +837,10 @@ show_summary() {
                 
                 if [[ $size_diff -gt 0 ]]; then
                     local size_diff_mb=$((size_diff / 1024 / 1024))
-                    print_warning "  📈 Size change: +${percent_change}% (+${size_diff_mb}MB larger)"
+                    print_warning "  📈 Size change: +${percent_change}%% (+${size_diff_mb}MB larger)"
                 elif [[ $size_diff -lt 0 ]]; then
                     local size_diff_mb=$(( (-size_diff) / 1024 / 1024 ))
-                    print_success "  📉 Size change: ${percent_change}% (-${size_diff_mb}MB smaller)"
+                    print_success "  📉 Size change: ${percent_change}%% (-${size_diff_mb}MB smaller)"
                 else
                     print_info "  ➡️  Size change: No change"
                 fi
