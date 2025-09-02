@@ -63,6 +63,21 @@ init_colors() {
 # Initialize colors
 init_colors
 
+# Simple progress indicator
+show_progress() {
+    local message="$1"
+    local pid="$2"
+    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local i=0
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r%s %s" "${chars:$i:1}" "$message"
+        i=$(( (i+1) % ${#chars} ))
+        sleep 0.1
+    done
+    printf "\r%s %s\n" "✓" "$message"
+}
+
 # Function to print colored output
 print_color() {
     local color="$1"
@@ -377,6 +392,55 @@ select_quality() {
     fi
 }
 
+# Function to format file size in human readable format
+format_file_size() {
+    local size="$1"
+    
+    if [[ "$size" -eq 0 ]]; then
+        echo "0 B"
+    elif [[ "$size" -lt 1024 ]]; then
+        echo "${size} B"
+    elif [[ "$size" -lt $((1024*1024)) ]]; then
+        echo "$((size/1024)) KB"
+    elif [[ "$size" -lt $((1024*1024*1024)) ]]; then
+        echo "$((size/1024/1024)) MB"
+    else
+        echo "$((size/1024/1024/1024)) GB"
+    fi
+}
+
+# Function to validate file format compatibility
+validate_file_format() {
+    local input="$1"
+    local output="$2"
+    
+    # Get file extension
+    local input_ext="${input##*.}"
+    local output_ext="${output##*.}"
+    
+    # Convert to lowercase
+    input_ext=$(echo "$input_ext" | tr '[:upper:]' '[:lower:]')
+    output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+    
+    # Define supported input formats
+    local supported_input="mp4 mkv avi mov webm m4v flv 3gp wmv mpg mpeg ts"
+    local supported_output="mp4 mkv avi mov webm m4v"
+    
+    # Check input format
+    if [[ ! " $supported_input " =~ " $input_ext " ]]; then
+        print_warning "⚠️  Input format '.$input_ext' may not be fully supported"
+        print_info "Supported input formats: $supported_input"
+    fi
+    
+    # Check output format
+    if [[ ! " $supported_output " =~ " $output_ext " ]]; then
+        print_warning "⚠️  Output format '.$output_ext' may not be optimal"
+        print_info "Recommended output formats: $supported_output"
+    fi
+    
+    return 0
+}
+
 # Function to estimate output file size for dry run
 estimate_output_size() {
     local input="$1"
@@ -462,9 +526,20 @@ do_remux() {
     print_color "$CYAN" "Command: ffmpeg -i \"$input\" -c copy \"$output\""
     echo ""
     
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
     # Use progress indicators for better UX
-    if ffmpeg -i "$input" -c copy "$output" -y -loglevel warning -stats; then
-        print_success "✅ Remux completed successfully!"
+    if ffmpeg -i "$input" -c copy "$output" -y -loglevel info -stats -hide_banner; then
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        echo ""
+        print_success "✅ Remux completed successfully in ${duration}s!"
+        
+        # Show file size comparison
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
     else
         print_error "Remux operation failed!"
         print_info "This might happen if the codecs are not compatible with the output container."
@@ -549,6 +624,11 @@ do_encode() {
         return 0
     fi
     
+    # Show conversion progress indicator
+    print_info "🚀 Starting video encoding..."
+    print_info "📊 Monitor the progress below:"
+    echo ""
+    
     # Build the command with proper parameters
     local cmd=(
         ffmpeg -i "$input"
@@ -556,8 +636,9 @@ do_encode() {
         -crf "$CRF_VALUE"
         -c:a "$audio_codec"
         -y
-        -loglevel warning
+        -loglevel info
         -stats
+        -hide_banner
     )
     
     # Add extra parameters if any
@@ -568,13 +649,57 @@ do_encode() {
     
     cmd+=("$output")
     
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
     if "${cmd[@]}"; then
-        print_success "✅ Encoding completed successfully!"
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        echo ""
+        print_success "✅ Encoding completed successfully in ${duration}s!"
+        
+        # Show file size comparison if input exists
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
     else
         print_error "Encoding operation failed!"
         print_info "Check the error messages above for details."
         exit 1
     fi
+}
+
+# Function to show file size comparison
+show_file_comparison() {
+    local input="$1"
+    local output="$2"
+    
+    echo ""
+    print_info "📊 File Size Comparison:"
+    
+    # Get file sizes
+    local input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    local output_size=$(stat -c%s "$output" 2>/dev/null || echo "0")
+    
+    # Convert to human readable format
+    local input_readable=$(format_file_size "$input_size")
+    local output_readable=$(format_file_size "$output_size")
+    
+    print_info "   Original:  $input_readable"
+    print_info "   Converted: $output_readable"
+    
+    # Calculate compression ratio if both sizes are available
+    if [[ "$input_size" -gt 0 && "$output_size" -gt 0 ]]; then
+        local ratio=$((output_size * 100 / input_size))
+        local savings=$((100 - ratio))
+        
+        if [[ $ratio -lt 100 ]]; then
+            print_success "   💾 Space saved: ${savings}% (compression ratio: ${ratio}%)"
+        else
+            print_warning "   📈 File size increased by $((ratio - 100))%"
+        fi
+    fi
+    echo ""
 }
 
 # Function to show conversion summary
@@ -734,6 +859,11 @@ main() {
     
     # Show file information
     get_file_info "$input_file"
+    
+    # Validate file format compatibility
+    echo ""
+    validate_file_format "$input_file" "$output_file"
+    echo ""
     
     # Select operation mode
     select_operation_mode
