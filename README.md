@@ -12,7 +12,7 @@
 
 *A powerful, professional video converter that transforms complex FFmpeg workflows into simple, beautiful commands*
 
-[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [📖 Documentation](#-documentation) • [🤝 Contributing](#-contributing)
+[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [📋 CHANGELOG](CHANGELOG.md) • [🤝 Contributing](#-contributing)
 
 </div>
 
