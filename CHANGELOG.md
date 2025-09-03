@@ -186,57 +186,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Planned] Future Versions
 
-### v1.2.0 - Enhanced Media Processing (Q4 2025)
-**Theme: Advanced Media Handling & Workflow Optimization**
-
-#### New Features
-- **🎬 Subtitle Management System**
-  - Extract subtitles from video files (SRT, ASS, VTT formats)
-  - Burn-in subtitles permanently into video streams
-  - Preserve existing subtitle tracks during conversion
-  - Support for multiple subtitle languages
-  - Smart subtitle track selection and mapping
-
-- **🎨 Basic Video Filters**
-  - Resize videos with quality preservation algorithms
-  - Crop videos with interactive selection or preset ratios
-  - Rotate videos (90°, 180°, 270°) with metadata preservation
-  - Scale videos for specific platforms (YouTube, Instagram, TikTok)
-  - Aspect ratio correction and letterboxing options
-
-- **📋 Custom Preset Management**
-  - Create and save user-defined encoding profiles
-  - Share presets between different systems
-  - Preset validation and compatibility checking
-  - Import/export preset collections
-  - Preset marketplace integration for community sharing
-
-- **⏸️ Resume & Recovery System**
-  - Resume interrupted batch conversions from last successful file
-  - Checkpoint system for long-running encode operations
-  - Recovery from system crashes or power failures
-  - Progress persistence across application restarts
-  - Smart duplicate detection and skip functionality
-
-#### Improvements
-- **Enhanced Progress Tracking**: Real-time ETA calculations and speed metrics
-- **Improved Error Handling**: Better recovery from partial failures in batch mode
-- **Memory Optimization**: Reduced memory footprint for large file processing
-- **Platform Support**: Enhanced Windows WSL2 compatibility
-
-#### Technical Enhancements
-- Modular filter architecture for easy extension
-- Improved FFmpeg parameter optimization
-- Better resource utilization monitoring
-- Enhanced logging system with rotation
-
-### v1.3.0 - Professional Workflow Integration ✅ **IMPLEMENTED** (2025-09-04)
-**Theme: Professional Video Production & Advanced Analytics**
-
-**� This version has been successfully implemented and released!**
-
-See the [1.3.0] changelog entry above for detailed implementation details.
-
 ### v1.4.0 - Cloud & Automation Platform (Q2 2026)
 **Theme: Cloud Integration & Intelligent Automation**
 
