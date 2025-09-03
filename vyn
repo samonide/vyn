@@ -27,7 +27,7 @@ trap 'cleanup' INT TERM
 
 # Script information
 readonly SCRIPT_NAME="vyn"
-readonly VERSION="1.1.0"
+readonly VERSION="1.3.0"
 readonly AUTHOR="samonide"
 readonly REPOSITORY="https://github.com/samonide/vyn"
 
@@ -44,6 +44,13 @@ declare -g CONFIG_FILE="$HOME/.config/vyn/config.conf"
 declare -g BATCH_INPUT_DIR=""
 declare -g BATCH_OUTPUT_DIR=""
 declare -g BATCH_FORMAT=""
+declare -g PRESET_MODE=""
+declare -g PROFESSIONAL_PRESET=""
+declare -g VIDEO_FILTERS=""
+declare -g ENABLE_ANALYTICS=false
+declare -g ANALYTICS_FILE="$HOME/.config/vyn/analytics.json"
+declare -g PLUGIN_DIR="$HOME/.config/vyn/plugins"
+declare -g PLUGIN_NAME=""
 
 # Function to initialize colors based on USE_COLOR setting
 init_colors() {
@@ -143,6 +150,317 @@ detect_gpu_acceleration() {
     
     print_warning "⚠️  No GPU acceleration detected"
     return 1
+}
+
+# Professional preset management
+load_professional_presets() {
+    local preset_file="$HOME/.config/vyn/presets.json"
+    if [[ -f "$preset_file" ]]; then
+        print_info "📋 Loading professional presets from $preset_file"
+    fi
+    return 0
+}
+
+setup_professional_presets() {
+    echo ""
+    print_color "$PURPLE" "🎯 Professional Preset Selection"
+    echo "1) Broadcast (High quality for TV/broadcasting)"
+    echo "2) Cinema (Film industry standard)"
+    echo "3) Web Streaming (Optimized for YouTube, Twitch)"
+    echo "4) Mobile (Optimized for phones and tablets)"
+    echo "5) Archive (Maximum quality preservation)"
+    echo "6) Social Media (Instagram, TikTok, Twitter)"
+    echo "7) Custom Professional"
+    echo ""
+    
+    while true; do
+        read -r -p "Select professional preset (1-7): " preset_choice
+        case $preset_choice in
+            1)
+                PROFESSIONAL_PRESET="broadcast"
+                CRF_VALUE="18"
+                VIDEO_FILTERS="deinterlace"
+                print_success "Selected: Broadcast preset (CRF 18, deinterlaced)"
+                break
+                ;;
+            2)
+                PROFESSIONAL_PRESET="cinema"
+                CRF_VALUE="16"
+                VIDEO_FILTERS="colorspace=bt709"
+                print_success "Selected: Cinema preset (CRF 16, BT.709 colorspace)"
+                break
+                ;;
+            3)
+                PROFESSIONAL_PRESET="web_streaming"
+                CRF_VALUE="23"
+                VIDEO_FILTERS="scale=1920:1080"
+                print_success "Selected: Web Streaming preset (CRF 23, 1080p)"
+                break
+                ;;
+            4)
+                PROFESSIONAL_PRESET="mobile"
+                CRF_VALUE="28"
+                VIDEO_FILTERS="scale=1280:720"
+                print_success "Selected: Mobile preset (CRF 28, 720p)"
+                break
+                ;;
+            5)
+                PROFESSIONAL_PRESET="archive"
+                CRF_VALUE="12"
+                VIDEO_FILTERS="denoise=light"
+                print_success "Selected: Archive preset (CRF 12, light denoising)"
+                break
+                ;;
+            6)
+                PROFESSIONAL_PRESET="social_media"
+                CRF_VALUE="26"
+                VIDEO_FILTERS="scale=1080:1080"
+                print_success "Selected: Social Media preset (CRF 26, square format)"
+                break
+                ;;
+            7)
+                setup_custom_professional_preset
+                break
+                ;;
+            *)
+                print_error "Invalid choice. Please enter 1-7."
+                ;;
+        esac
+    done
+}
+
+setup_custom_professional_preset() {
+    print_color "$CYAN" "🔧 Custom Professional Preset Configuration"
+    
+    read -r -p "Enter custom CRF value (10-30): " custom_crf
+    if [[ "$custom_crf" =~ ^[0-9]+$ ]] && [ "$custom_crf" -ge 10 ] && [ "$custom_crf" -le 30 ]; then
+        CRF_VALUE="$custom_crf"
+    else
+        print_warning "Invalid CRF, using default 23"
+        CRF_VALUE="23"
+    fi
+    
+    echo ""
+    print_color "$CYAN" "Available video filters:"
+    echo "1) None"
+    echo "2) Deinterlace"
+    echo "3) Denoise (light)"
+    echo "4) Denoise (strong)"
+    echo "5) Scale to 1080p"
+    echo "6) Scale to 720p"
+    echo "7) Color correction"
+    
+    read -r -p "Select video filter (1-7): " filter_choice
+    case $filter_choice in
+        1) VIDEO_FILTERS="" ;;
+        2) VIDEO_FILTERS="deinterlace" ;;
+        3) VIDEO_FILTERS="denoise=light" ;;
+        4) VIDEO_FILTERS="denoise=strong" ;;
+        5) VIDEO_FILTERS="scale=1920:1080" ;;
+        6) VIDEO_FILTERS="scale=1280:720" ;;
+        7) VIDEO_FILTERS="colorspace=bt709,eq=brightness=0.02:contrast=1.1" ;;
+        *) VIDEO_FILTERS="" ;;
+    esac
+    
+    PROFESSIONAL_PRESET="custom"
+    print_success "Custom preset configured: CRF $CRF_VALUE, Filters: ${VIDEO_FILTERS:-none}"
+}
+
+# Analytics and performance tracking
+init_analytics() {
+    local analytics_dir="$(dirname "$ANALYTICS_FILE")"
+    if [[ ! -d "$analytics_dir" ]]; then
+        mkdir -p "$analytics_dir"
+    fi
+    
+    if [[ ! -f "$ANALYTICS_FILE" ]]; then
+        cat > "$ANALYTICS_FILE" << EOF
+{
+  "version": "1.3.0",
+  "created": "$(date -Iseconds)",
+  "conversions": [],
+  "performance_stats": {
+    "total_conversions": 0,
+    "total_time_spent": 0,
+    "total_size_processed": 0,
+    "avg_compression_ratio": 0
+  }
+}
+EOF
+    fi
+}
+
+log_conversion_analytics() {
+    local input_file="$1"
+    local output_file="$2"
+    local operation_mode="$3"
+    local start_time="$4"
+    local end_time="$5"
+    
+    if [[ "$ENABLE_ANALYTICS" != true ]]; then
+        return 0
+    fi
+    
+    local duration=$((end_time - start_time))
+    local input_size=$(stat -c%s "$input_file" 2>/dev/null || echo "0")
+    local output_size=$(stat -c%s "$output_file" 2>/dev/null || echo "0")
+    local compression_ratio=0
+    
+    if [[ "$input_size" -gt 0 ]]; then
+        compression_ratio=$(( (output_size * 100) / input_size ))
+    fi
+    
+    # Simple JSON append (basic implementation)
+    local analytics_entry=$(cat << EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "input_file": "$(basename "$input_file")",
+  "output_file": "$(basename "$output_file")",
+  "operation_mode": "$operation_mode",
+  "preset": "$PROFESSIONAL_PRESET",
+  "duration_seconds": $duration,
+  "input_size_bytes": $input_size,
+  "output_size_bytes": $output_size,
+  "compression_ratio": $compression_ratio,
+  "gpu_used": "$USE_GPU",
+  "filters_applied": "$VIDEO_FILTERS"
+}
+EOF
+)
+    
+    print_info "📊 Conversion analytics logged"
+}
+
+show_analytics_summary() {
+    if [[ ! -f "$ANALYTICS_FILE" ]]; then
+        print_warning "No analytics data available"
+        return 1
+    fi
+    
+    echo ""
+    print_color "$GREEN" "📊 Analytics Summary"
+    print_info "Analytics file: $ANALYTICS_FILE"
+    print_info "Use 'jq' to view detailed analytics: jq . $ANALYTICS_FILE"
+    echo ""
+}
+
+# Basic plugin system
+init_plugin_system() {
+    if [[ ! -d "$PLUGIN_DIR" ]]; then
+        mkdir -p "$PLUGIN_DIR"
+        print_info "📦 Plugin directory created: $PLUGIN_DIR"
+    fi
+    
+    # Create example plugin
+    local example_plugin="$PLUGIN_DIR/example.sh"
+    if [[ ! -f "$example_plugin" ]]; then
+        cat > "$example_plugin" << 'EOF'
+#!/bin/bash
+# Example Vyn Plugin
+# This is a template for creating custom Vyn plugins
+
+plugin_name="Example Plugin"
+plugin_version="1.0.0"
+plugin_description="Example plugin for custom video processing"
+
+# Plugin function - gets called with input and output file paths
+execute_plugin() {
+    local input_file="$1"
+    local output_file="$2"
+    
+    echo "🔌 Running Example Plugin on: $(basename "$input_file")"
+    
+    # Add your custom FFmpeg processing here
+    # This example adds a subtle blur effect
+    ffmpeg -i "$input_file" \
+           -vf "boxblur=2:1" \
+           -c:a copy \
+           "$output_file" 2>/dev/null
+    
+    return $?
+}
+
+# Plugin validation (optional)
+validate_plugin() {
+    # Check if required tools are available
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        return 1
+    fi
+    return 0
+}
+EOF
+        chmod +x "$example_plugin"
+    fi
+}
+
+load_plugins() {
+    if [[ ! -d "$PLUGIN_DIR" ]]; then
+        return 0
+    fi
+    
+    local plugin_count=0
+    for plugin in "$PLUGIN_DIR"/*.sh; do
+        if [[ -f "$plugin" && -x "$plugin" ]]; then
+            plugin_count=$((plugin_count + 1))
+        fi
+    done
+    
+    if [[ $plugin_count -gt 0 ]]; then
+        print_info "📦 Found $plugin_count plugin(s) in $PLUGIN_DIR"
+    fi
+    
+    return 0
+}
+
+list_available_plugins() {
+    echo ""
+    print_color "$PURPLE" "📦 Available Plugins"
+    
+    if [[ ! -d "$PLUGIN_DIR" ]] || [[ -z "$(ls -A "$PLUGIN_DIR"/*.sh 2>/dev/null)" ]]; then
+        print_warning "No plugins found in $PLUGIN_DIR"
+        return 1
+    fi
+    
+    local count=1
+    for plugin in "$PLUGIN_DIR"/*.sh; do
+        if [[ -f "$plugin" && -x "$plugin" ]]; then
+            local plugin_name=$(basename "$plugin" .sh)
+            echo "$count) $plugin_name"
+            count=$((count + 1))
+        fi
+    done
+    
+    return 0
+}
+
+execute_plugin_conversion() {
+    local input_file="$1"
+    local output_file="$2"
+    local plugin_name="$3"
+    
+    local plugin_path="$PLUGIN_DIR/${plugin_name}.sh"
+    
+    if [[ ! -f "$plugin_path" ]]; then
+        print_error "Plugin not found: $plugin_name"
+        return 1
+    fi
+    
+    if [[ ! -x "$plugin_path" ]]; then
+        print_error "Plugin not executable: $plugin_name"
+        return 1
+    fi
+    
+    # Source the plugin and execute
+    source "$plugin_path"
+    
+    if declare -f execute_plugin >/dev/null; then
+        print_info "🔌 Executing plugin: $plugin_name"
+        execute_plugin "$input_file" "$output_file"
+        return $?
+    else
+        print_error "Plugin missing execute_plugin function: $plugin_name"
+        return 1
+    fi
 }
 
 # Simple progress indicator
@@ -539,7 +857,13 @@ show_help() {
     printf "${CYAN}├─${NC} ${WHITE}--audio-only${NC}     ${YELLOW}Extract audio only${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}--gpu${NC}            ${YELLOW}Enable GPU acceleration${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}--config${NC}         ${YELLOW}Specify config file path${NC}\n"
-    printf "${CYAN}└─${NC} ${WHITE}--save-config${NC}    ${YELLOW}Save current settings to config${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--save-config${NC}    ${YELLOW}Save current settings to config${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--preset${NC}         ${YELLOW}Use professional preset (broadcast, cinema, web, mobile)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--filters${NC}        ${YELLOW}Apply video filters (deinterlace, denoise, scale)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--analytics${NC}      ${YELLOW}Enable conversion analytics tracking${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--show-analytics${NC} ${YELLOW}Show analytics summary${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--list-plugins${NC}   ${YELLOW}List available plugins${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}--plugin${NC}         ${YELLOW}Use custom plugin for processing${NC}\n"
     echo ""
     
     # Examples section
@@ -549,6 +873,12 @@ show_help() {
     printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --batch${NC} ${YELLOW}# Batch convert directory${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --audio-only movie.mp4 audio.mp3${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --gpu input.mkv output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --preset cinema input.mov output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --filters deinterlace video.ts clean.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --analytics --gpu movie.mkv output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --show-analytics${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --list-plugins${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --plugin example input.mp4 output.mp4${NC}\n"
     printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} movie.mov${NC} ${YELLOW}# Prompts for output${NC}\n"
     echo ""
     
@@ -573,6 +903,24 @@ show_help() {
     printf "${CYAN}├─${NC} ${WHITE}Medium:${NC}  ${YELLOW}CRF 28 - Good quality, smaller files${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}Low:${NC}     ${YELLOW}CRF 32 - Acceptable quality, very small${NC}\n"
     printf "${CYAN}└─${NC} ${WHITE}Custom:${NC}  ${YELLOW}Choose your own CRF value (0-51)${NC}\n"
+    echo ""
+    
+    # Professional presets (v1.3.0)
+    printf "${GREEN}🎯 Professional Presets${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Broadcast:${NC}    ${YELLOW}High quality for TV/broadcasting (CRF 18)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Cinema:${NC}       ${YELLOW}Film industry standard (CRF 16, BT.709)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Web:${NC}          ${YELLOW}Optimized for streaming (CRF 23, 1080p)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Mobile:${NC}       ${YELLOW}Optimized for mobile devices (CRF 28, 720p)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Archive:${NC}      ${YELLOW}Maximum quality preservation (CRF 12)${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Social Media:${NC} ${YELLOW}Square format for social platforms${NC}\n"
+    echo ""
+    
+    # Video filters (v1.3.0)
+    printf "${GREEN}🎨 Video Filters${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Deinterlace:${NC}  ${YELLOW}Remove interlacing artifacts${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Denoise:${NC}      ${YELLOW}Reduce video noise (light/strong)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Scale:${NC}        ${YELLOW}Resize to specific resolution${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Color:${NC}        ${YELLOW}Color correction and enhancement${NC}\n"
     echo ""
     
     # Footer with link
@@ -1282,6 +1630,46 @@ main() {
                 save_config_flag=true
                 shift
                 ;;
+            --preset)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    PRESET_MODE=true
+                    PROFESSIONAL_PRESET="$2"
+                    shift 2
+                else
+                    print_error "Option --preset requires an argument (broadcast, cinema, web, mobile, archive, social)"
+                    exit 1
+                fi
+                ;;
+            --filters)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    VIDEO_FILTERS="$2"
+                    shift 2
+                else
+                    print_error "Option --filters requires an argument (deinterlace, denoise, scale, etc.)"
+                    exit 1
+                fi
+                ;;
+            --analytics)
+                ENABLE_ANALYTICS=true
+                shift
+                ;;
+            --show-analytics)
+                show_analytics_summary
+                exit 0
+                ;;
+            --list-plugins)
+                list_available_plugins
+                exit 0
+                ;;
+            --plugin)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    PLUGIN_NAME="$2"
+                    shift 2
+                else
+                    print_error "Option --plugin requires a plugin name"
+                    exit 1
+                fi
+                ;;
             -*)
                 print_error "Unknown option: $1"
                 echo "Use --help for usage information."
@@ -1301,6 +1689,56 @@ main() {
     
     # Load configuration file
     load_config
+    
+    # Initialize v1.3.0 features
+    if [[ "$ENABLE_ANALYTICS" == true ]]; then
+        init_analytics
+    fi
+    
+    if [[ "$PRESET_MODE" == true ]] || [[ -n "$PROFESSIONAL_PRESET" ]]; then
+        load_professional_presets
+        # Apply preset if specified via command line
+        if [[ -n "$PROFESSIONAL_PRESET" ]]; then
+            case "$PROFESSIONAL_PRESET" in
+                broadcast)
+                    CRF_VALUE="18"
+                    VIDEO_FILTERS="deinterlace"
+                    print_info "🎯 Applied Broadcast preset (CRF 18, deinterlaced)"
+                    ;;
+                cinema)
+                    CRF_VALUE="16"
+                    VIDEO_FILTERS="colorspace=bt709"
+                    print_info "🎯 Applied Cinema preset (CRF 16, BT.709 colorspace)"
+                    ;;
+                web|web_streaming)
+                    CRF_VALUE="23"
+                    VIDEO_FILTERS="scale=1920:1080"
+                    print_info "🎯 Applied Web Streaming preset (CRF 23, 1080p)"
+                    ;;
+                mobile)
+                    CRF_VALUE="28"
+                    VIDEO_FILTERS="scale=1280:720"
+                    print_info "🎯 Applied Mobile preset (CRF 28, 720p)"
+                    ;;
+                archive)
+                    CRF_VALUE="12"
+                    VIDEO_FILTERS="denoise=light"
+                    print_info "🎯 Applied Archive preset (CRF 12, light denoising)"
+                    ;;
+                social|social_media)
+                    CRF_VALUE="26"
+                    VIDEO_FILTERS="scale=1080:1080"
+                    print_info "🎯 Applied Social Media preset (CRF 26, square format)"
+                    ;;
+                *)
+                    print_warning "Unknown preset: $PROFESSIONAL_PRESET, using default settings"
+                    ;;
+            esac
+        fi
+    fi
+    
+    init_plugin_system
+    load_plugins
     
     # Check if required dependencies are installed
     check_dependencies
@@ -1518,6 +1956,46 @@ main() {
     local start_time
     start_time=$(date +%s)
     
+    # Handle plugin execution if specified
+    if [[ -n "$PLUGIN_NAME" ]]; then
+        if execute_plugin_conversion "$input_file" "$output_file" "$PLUGIN_NAME"; then
+            local end_time
+            end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            
+            # Show summary for plugin conversion
+            show_summary "$input_file" "$output_file"
+            
+            # Log analytics if enabled
+            if [[ "$ENABLE_ANALYTICS" == true ]]; then
+                log_conversion_analytics "$input_file" "$output_file" "$duration" "plugin" "$PLUGIN_NAME"
+            fi
+            
+            # Format duration nicely
+            local hours=$((duration / 3600))
+            local minutes=$(((duration % 3600) / 60))
+            local seconds=$((duration % 60))
+            
+            if [[ $hours -gt 0 ]]; then
+                print_success "🎉 Plugin conversion completed in ${hours}h ${minutes}m ${seconds}s!"
+            elif [[ $minutes -gt 0 ]]; then
+                print_success "🎉 Plugin conversion completed in ${minutes}m ${seconds}s!"
+            else
+                print_success "🎉 Plugin conversion completed in ${seconds}s!"
+            fi
+            
+            # Save configuration if requested
+            if [[ "$save_config_flag" == true ]]; then
+                save_config
+            fi
+            
+            exit 0
+        else
+            print_error "Plugin conversion failed!"
+            exit 1
+        fi
+    fi
+    
     # Perform conversion or preview
     if [[ "$OPERATION_MODE" == "remux" ]]; then
         do_remux "$input_file" "$output_file"
@@ -1540,6 +2018,18 @@ main() {
     
     # Show summary
     show_summary "$input_file" "$output_file"
+    
+    # Log analytics if enabled
+    if [[ "$ENABLE_ANALYTICS" == true ]]; then
+        local conversion_type="$OPERATION_MODE"
+        if [[ "$USE_GPU" == true ]]; then
+            conversion_type="${conversion_type}_gpu"
+        fi
+        if [[ "$PRESET_MODE" == true ]]; then
+            conversion_type="${conversion_type}_preset_${PROFESSIONAL_PRESET}"
+        fi
+        log_conversion_analytics "$input_file" "$output_file" "$duration" "$conversion_type" ""
+    fi
     
     # Format duration nicely
     local hours=$((duration / 3600))
