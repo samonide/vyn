@@ -1,6 +1,15 @@
 # 🎬 Vyn
 
-**Vyn — Video. Simplified.**
+**Vyn — Video. Simplif- **🗂️ Batch Processi- **🗂️ Batch Processing**: Process entire directories with `vyn --batch` for maximum efficiency
+- **🎮 GPU Acceleration**: Hardware-accelerated encoding with `--gpu` for 3-5x faster conversion
+- **🎵 Audio-Only Mode**: Extract audio with `--audio-only` supporting MP3, FLAC, AAC, Opus, and more
+- **📄 Configuration Management**: Save preferences with `--save-config` and load with `--co7. **Configuration**: Save settings with `--save-config` for consistent results
+
+## 🤝 Join the Community: Convert multiple files at once with intelligent directory scanning
+- **🎵 Audio-Only Mode**: Extract audio tracks with support for MP3, AAC, FLAC, Opus, and more
+- **🎮 GPU Acceleration**: Hardware-accelerated encoding with NVENC, VAAPI, and QuickSync support
+- **📄 Configuration Management**: Save and load preferences for consistent workflows
+- **🎯 Interactive CLI**: User-friendly prompts for all conversion options*
 
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
