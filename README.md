@@ -1,6 +1,6 @@
-# 🎬 Vyn
-
 <div align="center">
+
+# 🎬 Vyn
 
 **Video. Simplified.**
 
