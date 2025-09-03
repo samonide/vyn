@@ -5,6 +5,46 @@ All notable changes to Vyn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-09-03
+
+### Added
+- **🗂️ Batch Processing Mode** - Convert multiple files at once with `--batch` flag
+- **📄 Configuration File Support** - Save and load preferences with `--config` and `--save-config`
+- **🎮 GPU Acceleration** - Hardware acceleration support for NVENC, VAAPI, and QuickSync with `--gpu`
+- **🎵 Audio-Only Mode** - Extract audio tracks with `--audio-only` flag
+- **📊 Enhanced Progress Display** - Improved visual feedback with detailed operation status
+- **🔧 Smart Codec Selection** - Automatic GPU codec selection based on available hardware
+- **📁 Auto-Directory Scanning** - Batch mode automatically finds all video files in directories
+- **💾 Configuration Persistence** - Remember user preferences across sessions
+- **🎯 Format-Specific Optimization** - GPU acceleration tailored for different output formats
+
+### Improved
+- **🎬 Video Encoding Pipeline** - Enhanced with GPU acceleration and better error handling
+- **📋 Help System** - Updated with new batch processing and GPU acceleration options
+- **🚀 Performance** - Significant speed improvements when GPU acceleration is available
+- **🛡️ Error Recovery** - Better handling of GPU fallback scenarios
+- **💬 User Experience** - More informative feedback for batch operations and GPU status
+- **🔄 File Processing** - Smarter file discovery and validation in batch mode
+
+### Technical Improvements
+- **🎮 Hardware Detection** - Automatic GPU capability detection (NVIDIA, AMD, Intel)
+- **📦 Codec Compatibility** - Enhanced codec selection for different output containers
+- **⚡ Batch Optimization** - Efficient processing pipeline for multiple files
+- **🔧 Configuration Management** - Robust config file handling with validation
+- **📊 Progress Tracking** - Enhanced progress indicators for long-running batch operations
+
+### Supported GPU Acceleration
+- **NVIDIA NVENC** - H.264/H.265 hardware encoding for GeForce/Quadro cards
+- **AMD/Intel VAAPI** - Hardware acceleration for Linux systems
+- **Intel QuickSync** - Hardware acceleration for Intel integrated graphics
+
+### New Command Line Options
+- `--batch` - Enter batch processing mode for multiple files
+- `--audio-only` - Extract audio tracks only
+- `--gpu` - Enable GPU acceleration if available
+- `--config <path>` - Specify custom configuration file path
+- `--save-config` - Save current settings to configuration file
+
 ## [1.0.1] - 2025-09-02
 
 ### Added
@@ -104,12 +144,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resume support for interrupted conversions
 - Queue system for batch operations
 
-### v2.0.0 - Next Generation
-- Optional web interface for remote usage
-- Streaming output to cloud services
-- AI-powered optimization suggestions
-- Plugin system for custom filters
-- Distributed processing support
 
 ---
 
