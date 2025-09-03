@@ -31,6 +31,7 @@ Thumbs.db
 
 # Test files
 test_video.*
+test-video.mp4
 sample_*.*
 *.test.*
 
