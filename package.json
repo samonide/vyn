@@ -1,6 +1,6 @@
 {
   "name": "vyn",
-  "version": "1.1.0-dev",
+  "version": "1.1.0",
   "description": "Vyn - A powerful, fast, and intuitive video format converter using FFmpeg with interactive CLI",
   "main": "vyn",
   "scripts": {
