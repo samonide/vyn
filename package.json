@@ -26,7 +26,14 @@
     "remux",
     "transcode",
     "fast",
-    "intuitive"
+    "intuitive",
+    "batch",
+    "gpu",
+    "nvenc",
+    "vaapi",
+    "audio",
+    "config",
+    "hardware-acceleration"
   ],
   "author": "samonide",
   "license": "Unlicense",

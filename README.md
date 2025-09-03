@@ -435,43 +435,7 @@ chmod +x vyn
 6. **Disk Space**: Output files can be larger than input
 7. **Configuration**: Save settings with `--save-config` for consistent results
 
-## 📋 TODO - Future Plans
-
-### 🔥 Recently Completed (v1.1.0) ✅
-- [x] **Batch Processing Mode** - ✨ Convert multiple files with intelligent directory scanning
-- [x] **Configuration File Support** - ✨ Save and load preferences for consistent workflows  
-- [x] **GPU Acceleration** - ✨ NVENC/VAAPI/QuickSync support for faster encoding
-- [x] **Audio-only Mode** - ✨ Extract and convert audio tracks separately
-- [x] **Enhanced Progress Display** - ✨ Improved visual feedback for batch operations
-
-### 🚀 Upcoming Features (v1.2.0)
-- [ ] **Subtitle Handling** - Preserve, extract, or burn-in subtitles
-- [ ] **Video Filters** - Basic filters (resize, crop, rotate)
-- [ ] **Preset Management** - Create and save custom encoding presets
-- [ ] **Resume Support** - Resume interrupted conversions
-- [ ] **Queue System** - Add multiple files to conversion queue
-
-### 🎯 Advanced Features (v1.3.0)
-- [ ] **Custom Preset Management** - User-defined encoding profiles
-- [ ] **Advanced Video Filters** - Deinterlacing, noise reduction, sharpening
-- [ ] **Multi-Stream Processing** - Handle multiple audio/subtitle tracks
-- [ ] **Conversion Analytics** - Detailed performance and quality metrics
-- [ ] **Plugin Architecture** - Support for custom filters and effects
-
-### 🌟 Long-term Goals (v2.0.0)
-- [ ] **Web Interface** - Optional web-based GUI for remote usage
-- [ ] **Streaming Output** - Direct upload to cloud services
-- [ ] **Auto-optimization** - AI-powered quality/size optimization
-- [ ] **Distributed Processing** - Multi-machine encoding support
-- [ ] **REST API** - Programmatic access for integration
-
-### 🔧 Technical Improvements
-- [ ] **Unit Tests** - Comprehensive testing suite
-- [ ] **Performance Profiling** - Optimize bottlenecks
-- [ ] **Logging System** - Detailed conversion logs
-- [ ] **Docker Support** - Containerized deployment
-
-*Have a feature request? [Open an issue](https://github.com/samonide/vyn/issues) and let's discuss!*
+## � Troubleshooting
 
 ## 🤝 Join the Community
 
@@ -485,7 +449,7 @@ chmod +x vyn
 - Steps to reproduce
 
 ### 💡 Have an Idea?
-We love feature requests! Check our [TODO list](#-todo---future-plans) and suggest new ideas.
+We love feature requests! Check our [comprehensive roadmap in CHANGELOG.md](CHANGELOG.md#planned-future-versions) to see what's planned and suggest new ideas.
 
 ### 🚀 Want to Contribute Code?
 1. Fork the repo
