@@ -1,11 +1,20 @@
 # 🎬 Vyn
 
-**Vyn — Video. Simplified.**
+**Vyn — Video. Simplif- **🗂️ Batch Processi- **🗂️ Batch Processing**: Process entire directories with `vyn --batch` for maximum efficiency
+- **🎮 GPU Acceleration**: Hardware-accelerated encoding with `--gpu` for 3-5x faster conversion
+- **🎵 Audio-Only Mode**: Extract audio with `--audio-only` supporting MP3, FLAC, AAC, Opus, and more
+- **📄 Configuration Management**: Save preferences with `--save-config` and load with `--co7. **Configuration**: Save settings with `--save-config` for consistent results
+
+## 🤝 Join the Community: Convert multiple files at once with intelligent directory scanning
+- **🎵 Audio-Only Mode**: Extract audio tracks with support for MP3, AAC, FLAC, Opus, and more
+- **🎮 GPU Acceleration**: Hardware-accelerated encoding with NVENC, VAAPI, and QuickSync support
+- **📄 Configuration Management**: Save and load preferences for consistent workflows
+- **🎯 Interactive CLI**: User-friendly prompts for all conversion options*
 
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![FFmpeg](https://img.shields.io/badge/Powered%20by-FFmpeg-orange.svg)](https://ffmpeg.org/)
-[![Version](https://img.shields.io/badge/version-1.0.1-brightgreen.svg)](https://github.com/samonide/vyn/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](https://github.com/samonide/vyn/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)]()
 [![Made by](https://img.shields.io/badge/made%20by-samonide-red.svg)](https://github.com/samonide)
 
@@ -30,10 +39,14 @@ vyn movie.mkv movie.mp4
 - **🚀 Two Operation Modes:**
   - **Remux**: Lightning-fast container format changes (no re-encoding)
   - **Encode**: Full conversion with quality control and size optimization
-- **🎯 Interactive CLI**: User-friendly prompts for all conversion options
-- **� Dry Run Mode**: Preview operations safely without modifying files
+- **🗂️ Batch Processing**: Convert multiple files at once with intelligent directory scanning
+- **🎵 Audio-Only Mode**: Extract audio tracks with support for MP3, AAC, FLAC, Opus, and more
+- **� GPU Acceleration**: Hardware-accelerated encoding with NVENC, VAAPI, and QuickSync support
+- **📄 Configuration Management**: Save and load preferences for consistent workflows
+- **�🎯 Interactive CLI**: User-friendly prompts for all conversion options
+- **🔍 Dry Run Mode**: Preview operations safely without modifying files
 - **⚡ Animated Progress Bars**: Beautiful real-time progress indicators during conversion
-- **�📊 Quality Control**: Multiple presets (High, Good, Medium, Low) plus custom CRF values
+- **📊 Quality Control**: Multiple presets (High, Good, Medium, Low) plus custom CRF values
 - **📁 Wide Format Support**: MP4, MKV, WebM, AVI, MOV, FLV, 3GP, and many more
 - **🌍 Cross-Platform**: Works on Linux, macOS, and Windows (with WSL)
 - **📈 Advanced Analytics**: File size comparisons, compression ratios, and timing information
@@ -41,21 +54,27 @@ vyn movie.mkv movie.mp4
 - **⚡ Smart Features**: Auto-directory creation, format validation, and intelligent codec selection
 - **🛡️ Robust Error Handling**: Better validation and recovery from edge cases
 
-## 🆕 What's New in v1.0.1
+## 🆕 What's New in v1.1.0
 
-**Enhanced User Experience:**
-- **🎨 Beautiful Interface**: Professional styling with consistent design across help and version outputs
-- **⚡ Animated Progress Bars**: Real-time visual feedback with spinners and progress indicators
-- **🔍 Dry Run Mode**: Safe preview of operations with `--dry-run` flag
-- **📊 Smart Analytics**: File size comparisons, compression ratios, and conversion timing
+**🚀 Major Productivity Features:**
+- **🗂️ Batch Processing**: Process entire directories with `vyn --batch` for maximum efficiency
+- **🎮 GPU Acceleration**: Hardware-accelerated encoding with `--gpu` for 3-5x faster conversion
+- **🎵 Audio-Only Mode**: Extract audio with `--audio-only` supporting MP3, FLAC, AAC, Opus, and more
+- **� Configuration Management**: Save preferences with `--save-config` and load with `--config`
 
-**Developer Quality Features:**
-- **🎯 Format Validation**: Intelligent warnings for potentially unsupported formats
-- **📁 Auto-Directory Creation**: Automatic creation of output directories
-- **🛡️ Enhanced Error Handling**: Better validation and error recovery
-- **💾 Human-Readable Sizes**: Automatic formatting of file sizes (KB/MB/GB)
+**🎯 Enhanced Performance:**
+- **NVIDIA NVENC**: Hardware H.264/H.265 encoding for GeForce and Quadro cards
+- **AMD/Intel VAAPI**: Linux hardware acceleration for AMD and Intel graphics
+- **Intel QuickSync**: Optimized encoding for Intel integrated graphics
+- **Smart Fallback**: Automatic CPU fallback when GPU acceleration isn't available
 
-> 🚀 **Try it now**: `vyn --dry-run input.mp4 output.webm` to see the new preview mode!
+**💡 Workflow Improvements:**
+- **Intelligent Directory Scanning**: Batch mode finds all video files automatically
+- **Format-Specific Optimization**: GPU codecs tailored for different output formats
+- **Enhanced Progress Display**: Better visual feedback for batch operations
+- **Configuration Persistence**: Remember your preferred settings across sessions
+
+> 🚀 **Try it now**: `vyn --batch` to convert entire directories or `vyn --gpu input.mkv output.mp4` for lightning-fast encoding!
 
 ## 📁 Project Structure
 
@@ -170,10 +189,26 @@ vyn --version
 ### Advanced Options
 
 ```bash
+# Batch convert entire directory
+vyn --batch
+
+# GPU-accelerated conversion
+vyn --gpu input.mkv output.mp4
+
+# Extract audio only
+vyn --audio-only movie.mp4 soundtrack.mp3
+
+# Use custom configuration
+vyn --config ~/my-vyn-config.conf input.avi output.webm
+
+# Save current settings
+vyn --save-config --gpu input.mov output.mp4
+
 # Silent mode for scripts
 vyn --no-color input.mov output.mp4
 
-# Pro tip: Vyn remembers your preferences during the session
+# Pro tip: Combine options for powerful workflows
+vyn --batch --gpu --save-config
 ```
 
 ### Interactive Workflow
@@ -211,6 +246,18 @@ The Constant Rate Factor (CRF) controls video quality vs file size:
 - Optimizing for specific devices/platforms
 - Converting legacy formats
 
+#### 🗂️ Batch Mode (Productivity)
+- Converting multiple files at once
+- Consistent settings across all files
+- Directory-wide format standardization
+- Automated workflow processing
+
+#### 🎵 Audio-Only Mode (Extraction)
+- Extracting soundtracks from videos
+- Converting between audio formats
+- Creating podcast episodes from video
+- Reducing file sizes for audio-only content
+
 ## 🎯 Format Support
 
 ### Input Formats
@@ -228,12 +275,45 @@ The Constant Rate Factor (CRF) controls video quality vs file size:
 
 ## 📖 Real-World Examples
 
-### 🎬 Content Creator Workflow
+### 🗂️ Batch Processing Workflow
 ```bash
-# Quick upload prep: Large MKV → Optimized MP4
-vyn raw_recording.mkv youtube_upload.mp4
-# Choose: Encode → Good Quality (CRF 23)
-# Result: 60% smaller file, upload-ready
+# Convert entire video collection to MP4
+vyn --batch
+# 1. Select input directory: ~/Videos/Raw
+# 2. Select output directory: ~/Videos/Converted  
+# 3. Choose format: MP4
+# 4. Select mode: Encode + Good Quality
+# Result: All videos converted consistently
+
+# GPU-accelerated batch processing
+vyn --batch --gpu
+# Same as above but 3-5x faster with hardware acceleration
+```
+
+### 🎵 Audio Extraction Workflow
+```bash
+# Extract high-quality audio from video
+vyn --audio-only concert.mkv audio.flac
+# Choose: Extract → FLAC (lossless)
+# Result: Perfect quality audio file
+
+# Create MP3 for mobile devices
+vyn --audio-only podcast.mp4 episode.mp3
+# Choose: Extract → MP3 (320kbps)
+# Result: Compressed audio for easy sharing
+```
+
+### 🎮 GPU Acceleration Workflow
+```bash
+# High-speed conversion with NVIDIA GPU
+vyn --gpu large_video.mov optimized.mp4
+# Choose: Encode → Good Quality (hardware accelerated)
+# Result: 3-5x faster than CPU-only encoding
+
+# Batch GPU processing for maximum throughput
+vyn --batch --gpu
+# Process entire directories with hardware acceleration
+# Result: Professional-grade speed for large workflows
 ```
 
 ### 📱 Mobile-First Conversion
@@ -270,16 +350,27 @@ vyn original_footage.avi archive_master.mkv
 
 ## 🛠️ Power User Features
 
-### Batch Processing (Current Workaround)
+### Batch Processing (Current Feature!)
 ```bash
 # Convert entire directory
-for file in *.mkv; do
-    echo "Converting: $file"
-    vyn "$file" "${file%.mkv}.mp4"
-done
+vyn --batch
 
-# Convert with specific pattern
-find . -name "*.avi" -exec vyn {} {}.mp4 \;
+# GPU-accelerated batch processing
+vyn --batch --gpu
+
+# Custom configuration for consistent results
+vyn --batch --config ~/video-workflow.conf
+```
+
+### Audio-Only Processing
+```bash
+# Extract audio in various formats
+vyn --audio-only movie.mp4 soundtrack.mp3
+vyn --audio-only concert.mkv audio.flac
+vyn --audio-only podcast.mp4 episode.aac
+
+# Batch audio extraction
+vyn --batch --audio-only
 ```
 
 ### Integration with Other Tools
@@ -296,12 +387,15 @@ vyn original.mkv compressed.mp4 && rsync compressed.mp4 backup_server:/videos/
 ### Script Integration
 ```bash
 #!/bin/bash
-# Automated video processing script
+# Automated video processing script with GPU acceleration
 for input in "$@"; do
     output="${input%.*}_processed.mp4"
     echo "Processing: $input → $output"
-    vyn "$input" "$output"
+    vyn --gpu "$input" "$output"
 done
+
+# Batch processing with saved configuration
+vyn --batch --config ~/production-settings.conf
 ```
 
 ## 🔍 Troubleshooting
@@ -325,56 +419,32 @@ chmod +x vyn
 - Restart terminal after PATH changes
 - Verify installation: `which vyn`
 
-**"Encoding failed"**
-- Check input file integrity
-- Ensure sufficient disk space
-- Try remux mode first to test file validity
+**"GPU acceleration not available"**
+- Your system doesn't support hardware acceleration
+- Install appropriate drivers (NVIDIA/AMD/Intel)
+- GPU acceleration will fall back to CPU automatically
+
+**"Batch processing failed"**
+- Check input directory permissions
+- Ensure output directory is writable
+- Verify video files are valid
+
+**"Configuration file error"**
+- Check config file syntax
+- Use `--save-config` to generate a valid config
+- Verify file permissions
 
 ### Performance Tips
 
-1. **SSD Storage**: Store files on SSD for faster I/O
-2. **CPU Considerations**: Encoding is CPU-intensive
-3. **Memory**: Ensure sufficient RAM for large files
-4. **Disk Space**: Output files can be larger than input
+1. **GPU Acceleration**: Use `--gpu` for 3-5x faster encoding when available
+2. **Batch Processing**: Use `--batch` for efficient multi-file workflows
+3. **SSD Storage**: Store files on SSD for faster I/O
+4. **CPU Considerations**: Encoding is CPU-intensive (fallback when no GPU)
+5. **Memory**: Ensure sufficient RAM for large files
+6. **Disk Space**: Output files can be larger than input
+7. **Configuration**: Save settings with `--save-config` for consistent results
 
-## 📋 TODO - Future Plans
-
-### 🔥 Upcoming Features (v1.2.0)
-- [ ] **Batch Processing Mode** - Convert multiple files with one command
-- [ ] **Configuration File** - Save preferred settings (quality, format, etc.)
-- [ ] **GPU Acceleration** - NVENC/VAAPI support for faster encoding
-- [ ] **Audio-only Mode** - Extract and convert audio tracks separately
-
-### 🚀 Advanced Features (v1.3.0)
-- [ ] **Subtitle Handling** - Preserve, extract, or burn-in subtitles
-- [ ] **Video Filters** - Basic filters (resize, crop, rotate)
-- [ ] **Preset Management** - Create and save custom encoding presets
-- [ ] **Resume Support** - Resume interrupted conversions
-- [ ] **Queue System** - Add multiple files to conversion queue
-
-### 🎯 Long-term Goals (v2.0.0)
-- [ ] **Web Interface** - Optional web-based GUI for remote usage
-- [ ] **Streaming Output** - Direct upload to cloud services
-- [ ] **Auto-optimization** - AI-powered quality/size optimization
-- [ ] **Plugin System** - Custom filters and codecs
-- [ ] **Distributed Processing** - Multi-machine encoding support
-
-### ✅ Recently Completed (v1.0.1)
-- [x] **Progress Bar** - ✨ Beautiful animated progress indicators
-- [x] **Dry Run Mode** - ✨ Safe preview without file modification
-- [x] **Enhanced UI** - ✨ Professional styling and visual hierarchy
-- [x] **Format Validation** - ✨ Smart warnings for unsupported formats
-- [x] **Auto Directory Creation** - ✨ Automatic output folder creation
-- [x] **File Size Analytics** - ✨ Compression ratios and comparisons
-- [x] **Better Error Handling** - ✨ Robust validation and recovery
-
-### 🔧 Technical Improvements
-- [ ] **Unit Tests** - Comprehensive testing suite
-- [ ] **Performance Profiling** - Optimize bottlenecks
-- [ ] **Logging System** - Detailed conversion logs
-- [ ] **Docker Support** - Containerized deployment
-
-*Have a feature request? [Open an issue](https://github.com/samonide/vyn/issues) and let's discuss!*
+## � Troubleshooting
 
 ## 🤝 Join the Community
 
@@ -388,7 +458,7 @@ chmod +x vyn
 - Steps to reproduce
 
 ### 💡 Have an Idea?
-We love feature requests! Check our [TODO list](#-todo---future-plans) and suggest new ideas.
+We love feature requests! Check our [comprehensive roadmap in CHANGELOG.md](CHANGELOG.md#planned-future-versions) to see what's planned and suggest new ideas.
 
 ### 🚀 Want to Contribute Code?
 1. Fork the repo

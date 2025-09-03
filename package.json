@@ -1,6 +1,6 @@
 {
   "name": "vyn",
-  "version": "1.0.1-dev",
+  "version": "1.1.0",
   "description": "Vyn - A powerful, fast, and intuitive video format converter using FFmpeg with interactive CLI",
   "main": "vyn",
   "scripts": {
@@ -26,7 +26,14 @@
     "remux",
     "transcode",
     "fast",
-    "intuitive"
+    "intuitive",
+    "batch",
+    "gpu",
+    "nvenc",
+    "vaapi",
+    "audio",
+    "config",
+    "hardware-acceleration"
   ],
   "author": "samonide",
   "license": "Unlicense",
