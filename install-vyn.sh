@@ -182,6 +182,15 @@ install_vyn() {
         return 1
     fi
     
+    # Download plugins manifest
+    local plugins_url="https://raw.githubusercontent.com/samonide/vyn/main/plugins.json"
+    print_info "Downloading plugin manifest..."
+    
+    if ! curl -fsSL "$plugins_url" -o "$temp_dir/plugins.json"; then
+        print_warning "Failed to download plugins.json from $plugins_url"
+        print_info "Plugin installation will be limited"
+    fi
+    
     # Make executable and install
     chmod +x "$temp_dir/vyn"
     
@@ -189,6 +198,15 @@ install_vyn() {
         print_error "Failed to install vyn to $install_dir"
         rm -rf "$temp_dir"
         return 1
+    fi
+    
+    # Install plugins manifest if downloaded successfully
+    if [[ -f "$temp_dir/plugins.json" ]]; then
+        if ! mv "$temp_dir/plugins.json" "$install_dir/plugins.json"; then
+            print_warning "Failed to install plugins.json to $install_dir"
+        else
+            print_info "Plugin manifest installed to $install_dir/plugins.json"
+        fi
     fi
     
     # Create symlink for global access (optional)

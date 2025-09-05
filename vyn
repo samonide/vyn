@@ -581,17 +581,15 @@ install_plugin() {
         mkdir -p "$PLUGIN_DIR"
         print_info "📦 Created plugin directory: $PLUGIN_DIR"
     fi
-    
-    # Copy plugin file from repository
-    local source_file="$PLUGIN_REPO_DIR/$plugin_file"
+
+    # Download plugin file from GitHub repository
+    local github_url="https://raw.githubusercontent.com/samonide/vyn/main/plugins/$plugin_file"
     local dest_file="$PLUGIN_DIR/${plugin_id}.sh"
     
-    if [[ ! -f "$source_file" ]]; then
-        print_error "Plugin source file not found: $source_file"
-        return 1
-    fi
+    print_info "🌐 Downloading plugin from GitHub..."
     
-    if cp "$source_file" "$dest_file" && chmod +x "$dest_file"; then
+    if curl -fsSL "$github_url" -o "$dest_file"; then
+        chmod +x "$dest_file"
         print_success "✅ Plugin '$plugin_name' installed successfully"
         
         # Show setup instructions if required
