@@ -1,6 +1,7 @@
 #!/bin/bash
 # Vyn Video Converter - One-Command Installer
 # Install vyn with a single command: sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
+# Cross-platform installer for Linux, macOS, and Windows
 
 set -e
 
