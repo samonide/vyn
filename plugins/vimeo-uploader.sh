@@ -60,12 +60,16 @@ init_vimeo_config() {
     echo "📋 Setup Steps:"
     echo "1. Go to: https://developer.vimeo.com/apps"
     echo "2. Create a new app (if you don't have one)"
-    echo "3. Generate a 'Personal Access Token'"
-    echo "4. Select these scopes:"
-    echo "   ✓ Upload videos"
-    echo "   ✓ Create/edit albums"
-    echo "   ✓ Private access to your account"
+    echo "3. Click 'Personal Access Tokens' tab"
+    echo "4. Click 'Generate new token'"
+    echo "5. Select these scopes (REQUIRED):"
+    echo "   ✅ Upload videos"
+    echo "   ✅ Create/edit albums"
+    echo "   ✅ View private videos"
+    echo "   ✅ Edit your account information"
+    echo "6. Copy the generated token"
     echo ""
+    echo "⚠️  IMPORTANT: Make sure 'Upload videos' scope is selected!"
     echo "💡 This is a one-time setup - your token will be saved securely."
     echo ""
     
@@ -184,14 +188,33 @@ upload_video_to_vimeo() {
     
     echo "⬆️  Uploading: $(basename "$video_file")"
     
-    # Create upload ticket
+    # Create upload ticket with proper JSON escaping
     local video_size=$(stat -c%s "$video_file" 2>/dev/null || stat -f%z "$video_file" 2>/dev/null)
+    local escaped_title=$(echo "$video_title" | sed 's/"/\\"/g')
     local upload_response=$(curl -s -X POST \
                                  -H "Authorization: bearer $VIMEO_ACCESS_TOKEN" \
                                  -H "Accept: application/vnd.vimeo.*+json;version=3.4" \
                                  -H "Content-Type: application/json" \
-                                 -d "{\"upload\":{\"approach\":\"tus\",\"size\":$video_size},\"name\":\"$video_title\"}" \
+                                 -d "{\"upload\":{\"approach\":\"tus\",\"size\":$video_size},\"name\":\"$escaped_title\"}" \
                                  "$VIMEO_API_BASE/me/videos")
+    
+    # Check for specific error conditions
+    if echo "$upload_response" | jq -e '.error' >/dev/null 2>&1; then
+        local error_msg=$(echo "$upload_response" | jq -r '.error')
+        echo "❌ Failed to create upload ticket"
+        
+        if [[ "$error_msg" == *"upload"*"scope"* ]]; then
+            echo "🔑 Token Error: Your access token doesn't have upload permissions"
+            echo "💡 Solution: Create a new token with 'Upload videos' scope at https://developer.vimeo.com/apps"
+            echo "   Then run: vyn --remove-plugins vimeo-uploader && vyn --add-plugins vimeo-uploader"
+        elif [[ "$error_msg" == *"rate limit"* ]]; then
+            echo "⏱️  Rate Limit: Too many API requests. Please wait a minute and try again."
+            echo "💡 Tip: Try uploading smaller batches of videos to avoid rate limits"
+        else
+            echo "Response: $upload_response"
+        fi
+        return 1
+    fi
     
     if ! echo "$upload_response" | jq -e '.upload.upload_link' >/dev/null 2>&1; then
         echo "❌ Failed to create upload ticket"
@@ -257,8 +280,11 @@ upload_folder_to_vimeo() {
         return 1
     fi
     
-    # Get video files
-    local video_files=($(get_video_files "$folder_path"))
+    # Get video files - properly handle filenames with spaces
+    local video_files=()
+    while IFS= read -r -d '' file; do
+        video_files+=("$file")
+    done < <(find "$folder_path" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mov" -o -iname "*.mkv" -o -iname "*.webm" -o -iname "*.flv" -o -iname "*.wmv" \) -print0)
     
     if [[ ${#video_files[@]} -eq 0 ]]; then
         echo "❌ No video files found in $folder_path"
