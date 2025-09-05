@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "repository": "vyn-plugins",
+  "description": "Official plugin repository for Vyn video converter",
+  "plugins": [
+    {
+      "id": "vimeo-uploader",
+      "name": "Vimeo Uploader",
+      "version": "1.4.0",
+      "description": "Upload video folders to Vimeo and create playlist links",
+      "author": "Vyn Team",
+      "file": "vimeo-uploader.sh",
+      "documentation": "vimeo-uploader.md",
+      "category": "Upload",
+      "tags": ["vimeo", "upload", "batch", "playlist"],
+      "requirements": {
+        "commands": ["curl", "jq"],
+        "api": "Vimeo API access token required"
+      },
+      "features": [
+        "Folder-based batch uploads",
+        "Automatic playlist creation", 
+        "Link generation (links.txt)",
+        "Multi-format support",
+        "Progress tracking",
+        "Error handling"
+      ],
+      "usage": "vyn --plugin vimeo-uploader /path/to/video/folder",
+      "setup": {
+        "required": true,
+        "description": "Requires Vimeo API access token",
+        "instructions": [
+          "1. Go to https://developer.vimeo.com/apps",
+          "2. Create a new app",
+          "3. Generate access token with 'upload' and 'create' scopes",
+          "4. Token will be requested on first use"
+        ]
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "upload",
+      "name": "Upload Services",
+      "description": "Plugins for uploading videos to various platforms"
+    },
+    {
+      "id": "conversion",
+      "name": "Video Conversion",
+      "description": "Plugins for specialized video conversion tasks"
+    },
+    {
+      "id": "utility",
+      "name": "Utilities",
+      "description": "Helper plugins for various video tasks"
+    }
+  ]
+}
