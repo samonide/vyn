@@ -2312,10 +2312,10 @@ main() {
     fi
     
     # Validate input file (allow directories for certain plugins)
-    if [[ -n "$PLUGIN_NAME" && "$PLUGIN_NAME" == "vimeo-uploader" ]]; then
-        # Vimeo uploader plugin accepts directories
-        if [[ ! -d "$input_file" ]]; then
-            print_error "Directory '$input_file' does not exist! Vimeo uploader requires a directory."
+    if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+        # These plugins accept both files and directories
+        if [[ ! -e "$input_file" ]]; then
+            print_error "Input path '$input_file' does not exist!"
             exit 1
         fi
     else
@@ -2327,11 +2327,11 @@ main() {
     fi
     
     # Check if input file/directory is readable
-    if [[ -n "$PLUGIN_NAME" && "$PLUGIN_NAME" == "vimeo-uploader" ]]; then
-        # For directory-based plugins, check directory permissions
+    if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+        # For directory-based plugins, check permissions
         if [[ ! -r "$input_file" ]]; then
-            print_error "Directory '$input_file' is not readable!"
-            print_info "Check directory permissions."
+            print_error "Path '$input_file' is not readable!"
+            print_info "Check permissions."
             exit 1
         fi
     else
@@ -2345,8 +2345,8 @@ main() {
     
     # If output file not provided, prompt for it (skip for directory-based plugins)
     if [[ -z "$output_file" ]]; then
-        if [[ -n "$PLUGIN_NAME" && "$PLUGIN_NAME" == "vimeo-uploader" ]]; then
-            # Vimeo uploader doesn't need an output file
+        if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+            # These plugins don't need an output file
             output_file=""
         else
             echo ""
@@ -2401,7 +2401,7 @@ main() {
     fi
     
     # Show file information (skip for directory-based plugins)
-    if [[ -z "$PLUGIN_NAME" || "$PLUGIN_NAME" != "vimeo-uploader" ]]; then
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
         get_file_info "$input_file"
         
         # Validate file format compatibility
@@ -2411,7 +2411,7 @@ main() {
     fi
     
     # Select operation mode (skip for directory-based plugins)
-    if [[ -z "$PLUGIN_NAME" || "$PLUGIN_NAME" != "vimeo-uploader" ]]; then
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
         select_operation_mode
         
         # Select original file handling
@@ -2422,7 +2422,7 @@ main() {
     fi
     
     # Confirm operation (skip for directory-based plugins)
-    if [[ -z "$PLUGIN_NAME" || "$PLUGIN_NAME" != "vimeo-uploader" ]]; then
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
         echo ""
         if [[ "$DRY_RUN" == true ]]; then
             print_color "$BLUE" "🔍 DRY RUN - Preview Mode"

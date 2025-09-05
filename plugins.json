@@ -36,6 +36,45 @@
           "4. Token will be requested on first use"
         ]
       }
+    },
+    {
+      "id": "quality-analyzer",
+      "name": "Quality Analyzer",
+      "version": "1.0.0",
+      "description": "Analyze video quality metrics and generate optimization reports",
+      "author": "Vyn Team",
+      "file": "quality-analyzer.sh",
+      "documentation": "quality-analyzer.md",
+      "category": "Analysis",
+      "tags": ["analysis", "quality", "metrics", "optimization", "reports"],
+      "requirements": {
+        "commands": ["ffprobe", "bc", "jq"],
+        "notes": "bc (calculator) package required for calculations"
+      },
+      "features": [
+        "Comprehensive quality metrics",
+        "Video codec analysis",
+        "Bitrate optimization suggestions",
+        "Compression efficiency assessment",
+        "Detailed quality reports",
+        "Batch folder analysis",
+        "Optimization recommendations"
+      ],
+      "usage": "vyn --plugin quality-analyzer /path/to/video/folder",
+      "metrics": [
+        "Resolution and aspect ratio",
+        "Bitrate and compression ratio",
+        "Frame rate analysis",
+        "Codec efficiency rating",
+        "Quality score (0-100)",
+        "File size optimization potential"
+      ],
+      "outputs": [
+        "Individual quality reports (.txt)",
+        "Summary analysis report",
+        "Optimization suggestions",
+        "Recommended vyn commands"
+      ]
     }
   ],
   "categories": [
@@ -43,6 +82,11 @@
       "id": "upload",
       "name": "Upload Services",
       "description": "Plugins for uploading videos to various platforms"
+    },
+    {
+      "id": "analysis",
+      "name": "Video Analysis",
+      "description": "Plugins for analyzing video quality and characteristics"
     },
     {
       "id": "conversion",

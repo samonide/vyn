@@ -1,0 +1,20 @@
+📊 Quality Analysis Summary Report
+================================
+📅 Analysis Date: Fri Sep  5 10:40:30 PM +06 2025
+📁 Folder: test_videos/
+📹 Total Videos: 1
+✅ Successfully Analyzed: 1
+📊 Average Quality Score: 57/100
+
+📋 Individual Reports:
+  - sample_1080p_quality_report.txt
+
+💡 Overall Recommendations:
+- Review individual reports for specific optimization suggestions
+- Videos with scores below 60 may benefit from re-encoding
+- Consider using vyn's professional presets for optimal results
+
+🎛️  Batch optimization commands:
+vyn --batch "test_videos/" --preset web      # Balanced quality/size
+vyn --batch "test_videos/" --preset cinema   # High quality
+vyn --batch "test_videos/" --preset mobile   # Size optimized

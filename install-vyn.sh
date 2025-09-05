@@ -1,280 +1,346 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# Vyn Video Converter - One-Command Installer
+# Install vyn with a single command: sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
 
-# Installation script for vyn - A powerful video format converter
-# Fast, intuitive video conversion using FFmpeg with interactive CLI
-#
-# Repository: https://github.com/samonide/vyn
-# License: Unlicense
-# Version: 1.0.0
+set -e
 
-set -euo pipefail
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m' # No Color
 
-# Script information
-readonly SCRIPT_NAME="install-vyn"
-readonly VERSION="1.0.1-dev"
-readonly REPOSITORY="https://github.com/samonide/vyn"
-
-# Terminal color codes
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m' # No Color
-
-# Functions for colored output
+# Functions
 print_color() {
     printf "${1}${2}${NC}\n"
 }
 
+print_success() {
+    print_color "$GREEN" "✅ $1"
+}
+
 print_error() {
-    print_color "$RED" "ERROR: $1" >&2
+    print_color "$RED" "❌ $1"
 }
 
 print_warning() {
-    print_color "$YELLOW" "WARNING: $1"
+    print_color "$YELLOW" "⚠️  $1"
 }
 
 print_info() {
-    print_color "$CYAN" "INFO: $1"
+    print_color "$BLUE" "ℹ️  $1"
 }
 
-print_success() {
-    print_color "$GREEN" "$1"
+# Check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# Detect script directory and vyn script location
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly VYN_SCRIPT="$SCRIPT_DIR/vyn"
+# Detect OS
+detect_os() {
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "linux"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+        echo "windows"
+    else
+        echo "unknown"
+    fi
+}
 
-# Function to check dependencies
+# Install dependencies based on OS
+install_dependencies() {
+    local os=$(detect_os)
+    
+    print_info "Installing dependencies for $os..."
+    
+    case "$os" in
+        "linux")
+            if command_exists apt; then
+                # Debian/Ubuntu
+                print_info "Using apt package manager..."
+                sudo apt update
+                sudo apt install -y ffmpeg curl jq bc
+            elif command_exists dnf; then
+                # Fedora
+                print_info "Using dnf package manager..."
+                sudo dnf install -y ffmpeg curl jq bc
+            elif command_exists yum; then
+                # CentOS/RHEL
+                print_info "Using yum package manager..."
+                sudo yum install -y ffmpeg curl jq bc
+            elif command_exists pacman; then
+                # Arch Linux
+                print_info "Using pacman package manager..."
+                sudo pacman -S --noconfirm ffmpeg curl jq bc
+            elif command_exists zypper; then
+                # openSUSE
+                print_info "Using zypper package manager..."
+                sudo zypper install -y ffmpeg curl jq bc
+            else
+                print_warning "Unknown Linux package manager. Please install ffmpeg, curl, jq, and bc manually."
+                return 1
+            fi
+            ;;
+        "macos")
+            if command_exists brew; then
+                print_info "Using Homebrew..."
+                brew install ffmpeg jq bc
+            else
+                print_error "Homebrew not found. Please install Homebrew first:"
+                print_info "Visit: https://brew.sh"
+                return 1
+            fi
+            ;;
+        "windows")
+            print_warning "Windows detected. Please install dependencies manually:"
+            print_info "1. Install FFmpeg: https://ffmpeg.org/download.html"
+            print_info "2. Install Git Bash or Windows Subsystem for Linux (WSL)"
+            print_info "3. Install jq and bc through your package manager"
+            return 1
+            ;;
+        *)
+            print_error "Unsupported operating system: $OSTYPE"
+            return 1
+            ;;
+    esac
+}
+
+# Check dependencies
 check_dependencies() {
     local missing_deps=()
-    local install_cmd=""
     
-    # Check for ffmpeg
-    if ! command -v ffmpeg &> /dev/null; then
+    if ! command_exists ffmpeg; then
         missing_deps+=("ffmpeg")
     fi
     
-    # Determine package manager and install command
-    if command -v pacman &> /dev/null; then
-        install_cmd="sudo pacman -S"
-    elif command -v apt &> /dev/null; then
-        install_cmd="sudo apt install"
-    elif command -v dnf &> /dev/null; then
-        install_cmd="sudo dnf install"
-    elif command -v brew &> /dev/null; then
-        install_cmd="brew install"
-    elif command -v zypper &> /dev/null; then
-        install_cmd="sudo zypper install"
-    else
-        install_cmd="# Use your package manager to install"
+    if ! command_exists curl; then
+        missing_deps+=("curl")
+    fi
+    
+    if ! command_exists jq; then
+        missing_deps+=("jq")
+    fi
+    
+    if ! command_exists bc; then
+        missing_deps+=("bc")
     fi
     
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
-        print_error "Missing required dependencies!"
-        print_info "Please install the following packages first:"
-        for dep in "${missing_deps[@]}"; do
-            echo "  ${install_cmd} ${dep}"
-        done
-        echo ""
-        print_info "jq is optional but recommended for better file information display:"
-        echo "  ${install_cmd} jq"
-        exit 1
-    fi
-    
-    print_success "✅ FFmpeg is installed: $(which ffmpeg)"
-    
-    if command -v jq &> /dev/null; then
-        print_success "✅ jq is installed: $(which jq)"
+        print_warning "Missing dependencies: ${missing_deps[*]}"
+        print_info "Attempting to install dependencies..."
+        
+        if ! install_dependencies; then
+            print_error "Failed to install dependencies automatically."
+            print_info "Please install the following manually: ${missing_deps[*]}"
+            return 1
+        fi
     else
-        print_warning "⚠️  jq is not installed (optional but recommended)"
-        print_info "Install with: ${install_cmd} jq"
+        print_success "All dependencies are already installed!"
     fi
 }
 
-# Function to validate vyn script
-validate_script() {
-    if [[ ! -f "$VYN_SCRIPT" ]]; then
-        print_error "vyn script not found at $VYN_SCRIPT"
-        print_info "Please ensure you're running this script from the vyn directory"
-        exit 1
+# Create installation directory
+create_install_dir() {
+    local install_dir="$HOME/.local/bin"
+    
+    if [[ ! -d "$install_dir" ]]; then
+        mkdir -p "$install_dir"
+        print_info "Created installation directory: $install_dir"
     fi
     
-    if [[ ! -x "$VYN_SCRIPT" ]]; then
-        print_info "Making vyn script executable..."
-        chmod +x "$VYN_SCRIPT"
+    # Add to PATH if not already there
+    if [[ ":$PATH:" != *":$install_dir:"* ]]; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        if [[ -f "$HOME/.zshrc" ]]; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+        fi
+        print_info "Added $install_dir to PATH in shell configuration"
+        print_warning "Please restart your terminal or run: source ~/.bashrc"
     fi
     
-    print_success "✅ vyn script found and validated"
+    echo "$install_dir"
 }
 
-# Function to install to system directory
-install_system() {
-    print_info "🚀 Installing to /usr/local/bin..."
+# Download and install vyn
+install_vyn() {
+    local install_dir=$(create_install_dir)
+    local temp_dir=$(mktemp -d)
+    local vyn_url="https://raw.githubusercontent.com/samonide/vyn/main/vyn"
     
-    if sudo ln -sf "$VYN_SCRIPT" /usr/local/bin/vyn; then
-        print_success "✅ Successfully installed to /usr/local/bin/vyn"
-        print_success "🎉 You can now use 'vyn' from anywhere!"
-        return 0
-    else
-        print_error "Installation to /usr/local/bin failed!"
+    print_info "Downloading vyn from GitHub..."
+    
+    if ! curl -fsSL "$vyn_url" -o "$temp_dir/vyn"; then
+        print_error "Failed to download vyn from $vyn_url"
+        rm -rf "$temp_dir"
         return 1
     fi
+    
+    # Make executable and install
+    chmod +x "$temp_dir/vyn"
+    
+    if ! mv "$temp_dir/vyn" "$install_dir/vyn"; then
+        print_error "Failed to install vyn to $install_dir"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    # Create symlink for global access (optional)
+    if command_exists sudo && [[ -d "/usr/local/bin" ]]; then
+        if sudo ln -sf "$install_dir/vyn" "/usr/local/bin/vyn" 2>/dev/null; then
+            print_info "Created global symlink: /usr/local/bin/vyn"
+        fi
+    fi
+    
+    rm -rf "$temp_dir"
+    print_success "vyn installed successfully to $install_dir/vyn"
 }
 
-# Function to install to user directory
-install_user() {
-    print_info "🏠 Installing to ~/.local/bin..."
+# Setup configuration directory
+setup_config() {
+    local config_dir="$HOME/.config/vyn"
     
-    # Create directory if it doesn't exist
-    mkdir -p ~/.local/bin
+    if [[ ! -d "$config_dir" ]]; then
+        mkdir -p "$config_dir"
+        print_info "Created configuration directory: $config_dir"
+    fi
     
-    # Create symlink
-    if ln -sf "$VYN_SCRIPT" ~/.local/bin/vyn; then
-        print_success "✅ Successfully installed to ~/.local/bin/vyn"
-        
-        # Check if ~/.local/bin is in PATH
-        if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
-            print_success "✅ ~/.local/bin is already in your PATH"
-            print_success "🎉 You can now use 'vyn' from anywhere!"
+    # Create plugins directory
+    if [[ ! -d "$config_dir/plugins" ]]; then
+        mkdir -p "$config_dir/plugins"
+        print_info "Created plugins directory: $config_dir/plugins"
+    fi
+    
+    # Download default configuration if it doesn't exist
+    if [[ ! -f "$config_dir/config.conf" ]]; then
+        local config_url="https://raw.githubusercontent.com/samonide/vyn/main/config.conf"
+        if curl -fsSL "$config_url" -o "$config_dir/config.conf" 2>/dev/null; then
+            print_info "Downloaded default configuration"
         else
-            print_warning "⚠️  ~/.local/bin is not in your PATH"
-            print_info "Add this line to your shell configuration file:"
-            print_color "$CYAN" 'export PATH="$HOME/.local/bin:$PATH"'
-            
-            # Detect shell and provide specific instructions
-            local shell_config=""
-            case "$SHELL" in
-                */bash)
-                    shell_config="~/.bashrc"
-                    ;;
-                */zsh)
-                    shell_config="~/.zshrc"
-                    ;;
-                */fish)
-                    shell_config="~/.config/fish/config.fish"
-                    print_info "For fish shell, use: set -U fish_user_paths \$HOME/.local/bin \$fish_user_paths"
-                    ;;
-                *)
-                    shell_config="your shell's configuration file"
-                    ;;
-            esac
-            
-            if [[ "$shell_config" != *"fish"* ]]; then
-                print_info "Add to $shell_config, then run: source $shell_config"
-            fi
+            print_warning "Could not download default configuration (will be created on first run)"
         fi
+    fi
+}
+
+# Verify installation
+verify_installation() {
+    local install_dir="$HOME/.local/bin"
+    
+    if [[ -x "$install_dir/vyn" ]]; then
+        print_success "Installation verified!"
+        
+        # Test basic functionality
+        if "$install_dir/vyn" --version >/dev/null 2>&1; then
+            print_success "vyn is working correctly!"
+        else
+            print_warning "vyn installed but may have issues. Try running: vyn --help"
+        fi
+        
         return 0
     else
-        print_error "Installation to ~/.local/bin failed!"
+        print_error "Installation verification failed!"
         return 1
     fi
 }
 
-# Function to add current directory to PATH
-install_path() {
-    print_info "📁 Adding current directory to PATH..."
+# Show post-installation info
+show_post_install_info() {
+    echo ""
+    print_color "$PURPLE" "🎉 Vyn Video Converter Installation Complete!"
+    echo ""
+    print_color "$CYAN" "📋 Quick Start:"
+    echo "  vyn --help                    # Show help"
+    echo "  vyn input.mp4 output.mp4     # Basic conversion"
+    echo "  vyn --list-plugins            # List available plugins"
+    echo ""
+    print_color "$CYAN" "🔧 Configuration:"
+    print_info "Config directory: ~/.config/vyn/"
+    print_info "Plugins directory: ~/.config/vyn/plugins/"
+    echo ""
+    print_color "$CYAN" "� Advanced Usage:"
+    echo "  vyn --preset cinema input.mp4 output.mp4    # Professional preset"
+    echo "  vyn --batch /path/to/videos/                # Batch conversion"
+    echo "  vyn --plugin quality-analyzer /videos/      # Analyze video quality"
+    echo ""
     
-    # Check if directory is already in PATH
-    if [[ ":$PATH:" == *":$SCRIPT_DIR:"* ]]; then
-        print_warning "⚠️  Directory is already in PATH"
-    else
-        print_info "Add this line to your shell configuration file:"
-        print_color "$CYAN" "export PATH=\"$SCRIPT_DIR:\$PATH\""
-        
-        # Detect shell and provide specific instructions
-        local shell_config=""
-        case "$SHELL" in
-            */bash)
-                shell_config="~/.bashrc"
-                ;;
-            */zsh)
-                shell_config="~/.zshrc"
-                ;;
-            */fish)
-                shell_config="~/.config/fish/config.fish"
-                print_info "For fish shell, use: set -U fish_user_paths $SCRIPT_DIR \$fish_user_paths"
-                ;;
-            *)
-                shell_config="your shell's configuration file"
-                ;;
-        esac
-        
-        if [[ "$shell_config" != *"fish"* ]]; then
-            print_info "Add to $shell_config, then run: source $shell_config"
-        fi
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        print_color "$YELLOW" "⚠️  Important:"
+        print_warning "Please restart your terminal or run: source ~/.bashrc"
+        print_info "This ensures vyn is available in your PATH"
+        echo ""
     fi
     
-    print_success "🎉 You can use 'vyn' once PATH is updated!"
-    return 0
+    print_color "$GREEN" "✨ Enjoy using vyn! Visit: https://github.com/samonide/vyn"
 }
 
 # Main installation function
 main() {
-    print_color "$BLUE" "🎬 Vyn Installation Script v${VERSION}"
-    print_info "Repository: $REPOSITORY"
+    echo ""
+    print_color "$PURPLE" "🎬 Vyn Video Converter - One-Command Installer"
+    print_color "$CYAN" "=================================================="
     echo ""
     
-    # Validate dependencies and script
-    check_dependencies
-    validate_script
+    # Check if already installed
+    if command_exists vyn; then
+        print_warning "vyn is already installed!"
+        print_info "Current version: $(vyn --version 2>/dev/null || echo 'unknown')"
+        echo ""
+        read -p "Do you want to reinstall/update? (y/N): " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Installation cancelled."
+            exit 0
+        fi
+        echo ""
+    fi
     
-    echo ""
-    print_color "$YELLOW" "📦 Installation Options:"
-    echo "1) 🌐 Global installation (/usr/local/bin) - requires sudo, accessible from anywhere"
-    echo "2) 🏠 User installation (~/.local/bin) - no sudo required, accessible from anywhere"
-    echo "3) 📁 PATH addition - uses current directory location"
-    echo "4) ❌ Cancel installation"
+    # Check dependencies
+    print_info "Checking dependencies..."
+    if ! check_dependencies; then
+        print_error "Dependency check failed!"
+        exit 1
+    fi
     echo ""
     
-    while true; do
-        read -r -p "Choose installation method (1-4): " choice
-        case $choice in
-            1)
-                if install_system; then
-                    break
-                else
-                    print_info "System installation failed. Try user installation instead."
-                fi
-                ;;
-            2)
-                if install_user; then
-                    break
-                else
-                    exit 1
-                fi
-                ;;
-            3)
-                if install_path; then
-                    break
-                else
-                    exit 1
-                fi
-                ;;
-            4)
-                print_info "Installation cancelled."
-                exit 0
-                ;;
-            *)
-                print_error "Invalid choice. Please enter 1, 2, 3, or 4."
-                ;;
-        esac
-    done
+    # Install vyn
+    print_info "Installing vyn..."
+    if ! install_vyn; then
+        print_error "Installation failed!"
+        exit 1
+    fi
+    echo ""
     
+    # Setup configuration
+    print_info "Setting up configuration..."
+    setup_config
     echo ""
-    print_success "🎉 Installation completed!"
-    print_info "Test the installation by running:"
-    print_color "$CYAN" "vyn --help"
-    echo ""
-    print_info "💡 Usage examples:"
-    print_color "$CYAN" "vyn input.mkv output.mp4"
-    print_color "$CYAN" "vyn /path/to/video.avi"
-    echo ""
-    print_info "🐛 Report issues at: $REPOSITORY/issues"
+    
+    # Verify installation
+    print_info "Verifying installation..."
+    if ! verify_installation; then
+        exit 1
+    fi
+    
+    # Show post-installation info
+    show_post_install_info
 }
 
-# Run main function with all arguments
+# Check if script is being run with bash
+if [[ -z "${BASH_VERSION}" ]]; then
+    print_error "This installer requires bash. Please run with bash."
+    exit 1
+fi
+
+# Check internet connection
+if ! curl -fsSL "https://api.github.com" >/dev/null 2>&1; then
+    print_error "No internet connection detected. Please check your connection and try again."
+    exit 1
+fi
+
+# Run main installation
 main "$@"

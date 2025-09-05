@@ -12,7 +12,7 @@
 
 *A powerful, professional video converter with seamless plugin system for uploads and processing*
 
-[🚀 Quick Start](#-quick-start) • [🔌 Plugins](#-plugins) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [📋 CHANGELOG](CHANGELOG.md)
+[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [🔌 Plugins](#-plugins) • [📋 CHANGELOG](CHANGELOG.md)
 
 </div>
 
@@ -20,42 +20,29 @@
 
 ## 🚀 Quick Start
 
+### One-Command Installation
 ```bash
-# Install Vyn
-git clone https://github.com/samonide/vyn.git && cd vyn && ./install-vyn.sh
+# Install vyn with a single command
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
+```
 
+### Manual Installation
+```bash
+# Clone and install locally
+git clone https://github.com/samonide/vyn.git && cd vyn && ./install-vyn.sh
+```
+
+### Basic Usage
+```bash
 # Convert a video (interactive mode)
 vyn movie.mkv movie.mp4
 
-# Install plugins for extended functionality
-vyn --add-plugins
+# Professional preset conversion
+vyn --preset cinema input.mov output.mp4
 
-# Upload video folders to Vimeo automatically
-vyn --plugin vimeo-uploader /path/to/videos/
+# Batch convert directory
+vyn --batch /path/to/videos/
 ```
-
-## 🔌 Plugins (New in v1.4.0)
-
-Vyn now features a comprehensive plugin system for extended functionality:
-
-### Plugin Management
-- **`vyn --add-plugins`** - Install plugins from repository
-- **`vyn --list-plugins`** - List installed plugins  
-- **`vyn --remove-plugins`** - Remove installed plugins
-
-### Available Plugins
-
-#### 🎬 Vimeo Uploader
-Upload entire video folders to Vimeo with automatic playlist creation:
-```bash
-vyn --plugin vimeo-uploader /videos/january/
-```
-**Features:**
-- Batch upload video folders
-- Auto-creates Vimeo playlists/albums
-- Generates `links.txt` with all URLs
-- One-time setup with personal access token
-- Multi-format support (MP4, AVI, MOV, MKV, etc.)
 
 ## ✨ Features
 
@@ -243,36 +230,31 @@ vyn --config ~/my-settings.conf input.avi output.mp4
 
 ---
 
-## 🔌 Plugin System
+## 🔌 Plugins (New in v1.4.0)
 
-Vyn includes an extensible plugin architecture for custom processing:
+Vyn features a comprehensive plugin system for extended functionality:
 
+### Plugin Management
 ```bash
-# List available plugins
+# Install plugins from repository
+vyn --add-plugins
+
+# List installed plugins  
 vyn --list-plugins
 
+# Remove installed plugins
+vyn --remove-plugins
+
 # Use a plugin
-vyn --plugin example input.mp4 output.mp4
-
-# Plugin directory
-~/.config/vyn/plugins/
+vyn --plugin quality-analyzer /path/to/videos/
 ```
 
-**Create Custom Plugin:**
-```bash
-# Plugin template at ~/.config/vyn/plugins/my-plugin.sh
-#!/bin/bash
-plugin_name="My Custom Plugin"
-plugin_description="Custom video processing"
+### Plugin Development
+For detailed plugin documentation, available plugins, and development guides, see [plugins/README.md](plugins/README.md).
 
-execute_plugin() {
-    local input="$1"
-    local output="$2"
-    
-    # Your custom FFmpeg processing here
-    ffmpeg -i "$input" -vf "your_filter" "$output"
-}
-```
+---
+
+## � Configuration
 
 ---
 
