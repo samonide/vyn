@@ -40,6 +40,7 @@ declare -g BATCH_MODE=false
 declare -g AUDIO_ONLY=false
 declare -g USE_GPU=false
 declare -g GPU_TYPE=""
+declare -g DELETE_ORIGINAL=false
 declare -g CONFIG_FILE="$HOME/.config/vyn/config.conf"
 declare -g BATCH_INPUT_DIR=""
 declare -g BATCH_OUTPUT_DIR=""
@@ -115,6 +116,9 @@ USE_COLOR="$USE_COLOR"
 
 # Audio-only mode preference
 AUDIO_ONLY="$AUDIO_ONLY"
+
+# Original file handling preference
+DELETE_ORIGINAL="$DELETE_ORIGINAL"
 EOF
     
     print_success "✅ Configuration saved to $CONFIG_FILE"
@@ -787,6 +791,17 @@ do_audio_extract() {
         if [[ -f "$input" && -f "$output" ]]; then
             show_file_comparison "$input" "$output"
         fi
+        
+        # Delete original file if requested and not in dry run mode
+        if [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" != true ]]; then
+            if rm "$input" 2>/dev/null; then
+                print_info "🗑️  Original file deleted: $(basename "$input")"
+            else
+                print_warning "⚠️  Failed to delete original file: $(basename "$input")"
+            fi
+        elif [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" == true ]]; then
+            print_info "🔍 DRY RUN: Would delete original file: $(basename "$input")"
+        fi
     else
         echo ""
         print_error "Audio extraction failed!"
@@ -794,7 +809,7 @@ do_audio_extract() {
             print_info "Error details:"
             cat /tmp/vyn_audio_output.log
         fi
-        exit 1
+        return 1
     fi
 }
 
@@ -932,6 +947,12 @@ show_help() {
     printf "${CYAN}├─${NC} ${WHITE}🎯 Encode:${NC}  ${YELLOW}Full conversion with quality control${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}🗂️  Batch:${NC}   ${YELLOW}Process multiple files at once${NC}\n"
     printf "${CYAN}└─${NC} ${WHITE}🎵 Audio:${NC}   ${YELLOW}Extract audio tracks only${NC}\n"
+    echo ""
+    
+    # Original file handling
+    printf "${GREEN}🗂️  Original File Handling${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Keep:${NC}    ${YELLOW}Preserve original files after conversion${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Delete:${NC}  ${YELLOW}Remove original files after successful conversion${NC}\n"
     echo ""
     
     # Quality presets
@@ -1103,6 +1124,34 @@ select_operation_mode() {
             2)
                 OPERATION_MODE="encode"
                 print_color $GREEN "Selected: Encode (Full conversion)"
+                break
+                ;;
+            *)
+                print_color $RED "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
+# Function to select original file handling
+select_original_file_action() {
+    echo ""
+    print_color $PURPLE "Original File Handling:"
+    echo "1) Keep original files after conversion"
+    echo "2) Delete original files after successful conversion"
+    echo ""
+    while true; do
+        read -r -p "Enter your choice (1-2): " choice
+        case $choice in
+            1)
+                DELETE_ORIGINAL=false
+                print_color $GREEN "Selected: Keep original files"
+                break
+                ;;
+            2)
+                DELETE_ORIGINAL=true
+                print_color $YELLOW "Selected: Delete original files after conversion"
+                print_warning "⚠️  Original files will be permanently deleted after successful conversion!"
                 break
                 ;;
             *)
@@ -1323,6 +1372,17 @@ do_remux() {
         if [[ -f "$input" && -f "$output" ]]; then
             show_file_comparison "$input" "$output"
         fi
+        
+        # Delete original file if requested and not in dry run mode
+        if [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" != true ]]; then
+            if rm "$input" 2>/dev/null; then
+                print_info "🗑️  Original file deleted: $(basename "$input")"
+            else
+                print_warning "⚠️  Failed to delete original file: $(basename "$input")"
+            fi
+        elif [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" == true ]]; then
+            print_info "🔍 DRY RUN: Would delete original file: $(basename "$input")"
+        fi
     else
         echo ""
         print_error "Remux operation failed!"
@@ -1532,6 +1592,17 @@ do_encode() {
         # Show file size comparison if input exists
         if [[ -f "$input" && -f "$output" ]]; then
             show_file_comparison "$input" "$output"
+        fi
+        
+        # Delete original file if requested and not in dry run mode
+        if [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" != true ]]; then
+            if rm "$input" 2>/dev/null; then
+                print_info "🗑️  Original file deleted: $(basename "$input")"
+            else
+                print_warning "⚠️  Failed to delete original file: $(basename "$input")"
+            fi
+        elif [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" == true ]]; then
+            print_info "🔍 DRY RUN: Would delete original file: $(basename "$input")"
         fi
     else
         echo ""
@@ -1817,6 +1888,7 @@ main() {
     if [[ "$BATCH_MODE" == true ]]; then
         setup_batch_processing
         select_operation_mode
+        select_original_file_action
         select_quality
         
         echo ""
@@ -1830,6 +1902,11 @@ main() {
         fi
         if [[ "$USE_GPU" == true ]]; then
             echo "  🎮 GPU:        $GPU_TYPE"
+        fi
+        if [[ "$DELETE_ORIGINAL" == true ]]; then
+            echo "  🗑️  Originals:  Will be deleted after conversion"
+        else
+            echo "  📁 Originals:  Will be kept after conversion"
         fi
         
         if [[ "$DRY_RUN" == true ]]; then
@@ -1884,12 +1961,20 @@ main() {
         # Show file information
         get_file_info "$input_file"
         
+        # Select original file handling
+        select_original_file_action
+        
         # Confirm audio extraction
         echo ""
         print_color "$PURPLE" "🎵 Audio Extraction Details:"
         echo "  📥 Input:     $input_file"
         echo "  📤 Output:    $output_file"
         echo "  ⚙️  Mode:      Audio-only extraction"
+        if [[ "$DELETE_ORIGINAL" == true ]]; then
+            echo "  🗑️  Original:  Will be deleted after extraction"
+        else
+            echo "  📁 Original:  Will be kept after extraction"
+        fi
         
         if [[ "$DRY_RUN" == true ]]; then
             echo ""
@@ -1988,6 +2073,9 @@ main() {
     # Select operation mode
     select_operation_mode
     
+    # Select original file handling
+    select_original_file_action
+    
     # Select quality if encoding
     select_quality
     
@@ -2006,6 +2094,11 @@ main() {
     fi
     if [[ "$USE_GPU" == true ]]; then
         echo "  🎮 GPU:       $GPU_TYPE"
+    fi
+    if [[ "$DELETE_ORIGINAL" == true ]]; then
+        echo "  🗑️  Original:  Will be deleted after conversion"
+    else
+        echo "  📁 Original:  Will be kept after conversion"
     fi
     if [[ "$DRY_RUN" == true ]]; then
         echo ""
