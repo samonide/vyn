@@ -672,22 +672,28 @@ process_batch_files() {
             continue
         fi
         
-        # Process the file
+        # Process the file (disable exit on error for individual file processing)
+        set +e
         if [[ "$OPERATION_MODE" == "remux" ]]; then
             if do_remux "$file" "$output_file"; then
                 ((processed++))
+                print_info "✅ Successfully processed: $(basename "$file")"
             else
                 ((failed++))
-                print_error "Failed to process: $file"
+                print_error "❌ Failed to process: $(basename "$file")"
+                # Continue with next file instead of stopping
             fi
         else
             if do_encode "$file" "$output_file"; then
                 ((processed++))
+                print_info "✅ Successfully processed: $(basename "$file")"
             else
                 ((failed++))
-                print_error "Failed to process: $file"
+                print_error "❌ Failed to process: $(basename "$file")"
+                # Continue with next file instead of stopping
             fi
         fi
+        set -e
     done
     
     # Show batch summary
@@ -1338,7 +1344,7 @@ do_remux() {
             print_info "Error details:"
             cat /tmp/vyn_output.log
         fi
-        exit 1
+        return 1
     fi
 }
 
@@ -1547,7 +1553,7 @@ do_encode() {
             print_info "Error details:"
             cat /tmp/vyn_output.log
         fi
-        exit 1
+        return 1
     fi
 }
 
