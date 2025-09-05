@@ -344,6 +344,91 @@ upload_folder_to_vimeo() {
     return 0
 }
 
+# Upload a single video file to Vimeo
+upload_single_file_to_vimeo() {
+    local file_path="$1"
+    
+    if [[ ! -f "$file_path" ]]; then
+        echo "❌ File not found: $file_path"
+        return 1
+    fi
+    
+    echo ""
+    echo "🎬 Vimeo Single File Uploader"
+    echo "============================="
+    echo "📽️  Processing file: $file_path"
+    echo ""
+    
+    # Initialize configuration
+    if ! init_vimeo_config; then
+        return 1
+    fi
+    
+    # Test connection
+    if ! test_vimeo_connection; then
+        return 1
+    fi
+    
+    # Check if file is a video
+    local file_ext=$(echo "${file_path##*.}" | tr '[:upper:]' '[:lower:]')
+    case "$file_ext" in
+        mp4|avi|mov|mkv|webm|flv|wmv)
+            ;;
+        *)
+            echo "❌ Unsupported file type: .$file_ext"
+            echo "💡 Supported formats: mp4, avi, mov, mkv, webm, flv, wmv"
+            return 1
+            ;;
+    esac
+    
+    # Get parent directory for album name
+    local parent_dir=$(dirname "$file_path")
+    local folder_name=$(basename "$parent_dir")
+    local video_title=$(basename "$file_path" | sed 's/\.[^.]*$//')
+    
+    # Create album using parent directory name
+    local folder_description="Single file upload from $parent_dir on $(date)"
+    local album_id=$(create_vimeo_folder "$folder_name" "$folder_description")
+    
+    if [[ -z "$album_id" ]]; then
+        echo "❌ Failed to create Vimeo album"
+        return 1
+    fi
+    
+    # Create links file in the same directory as the video
+    local links_file="$parent_dir/links.txt"
+    local album_url="https://vimeo.com/album/$album_id"
+    
+    echo ""
+    echo "🔗 Album URL: $album_url" | tee "$links_file"
+    echo "" >> "$links_file"
+    echo "Video link:" >> "$links_file"
+    echo "===========" >> "$links_file"
+    
+    # Upload the video
+    echo ""
+    echo "📽️  Uploading: $video_title"
+    
+    local video_url=$(upload_video_to_vimeo "$file_path" "$video_title" "$album_id")
+    
+    if [[ $? -eq 0 && -n "$video_url" ]]; then
+        echo "$video_title: $video_url" >> "$links_file"
+        echo ""
+        echo "🎉 Upload Complete!"
+        echo "=================="
+        echo "✅ Successfully uploaded: $video_title"
+        echo "📋 Link saved to: $links_file"
+        echo "🔗 Album URL: $album_url"
+        echo "🎥 Video URL: $video_url"
+        echo ""
+        return 0
+    else
+        echo "❌ Failed to upload: $file_path"
+        echo "FAILED: $video_title" >> "$links_file"
+        return 1
+    fi
+}
+
 # Plugin execution function (required by vyn plugin system)
 execute_plugin() {
     local input_path="$1"
@@ -358,8 +443,13 @@ execute_plugin() {
     if [[ -d "$input_path" ]]; then
         upload_folder_to_vimeo "$input_path"
         return $?
+    elif [[ -f "$input_path" ]]; then
+        # Handle single file uploads
+        upload_single_file_to_vimeo "$input_path"
+        return $?
     else
-        echo "❌ Vimeo uploader requires a directory path"
+        echo "❌ Vimeo uploader requires a valid file or directory path"
+        echo "💡 Usage: vyn --plugin vimeo-uploader /path/to/video/file.mp4"
         echo "💡 Usage: vyn --plugin vimeo-uploader /path/to/video/folder"
         return 1
     fi
@@ -368,9 +458,19 @@ execute_plugin() {
 # If script is run directly (not sourced), run the main function
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ $# -lt 1 ]]; then
-        echo "Usage: $0 <folder_path>"
+        echo "Usage: $0 <file_or_folder_path>"
+        echo "Examples:"
+        echo "  $0 /path/to/video.mp4"
+        echo "  $0 /path/to/video/folder"
         exit 1
     fi
     
-    upload_folder_to_vimeo "$1"
+    if [[ -d "$1" ]]; then
+        upload_folder_to_vimeo "$1"
+    elif [[ -f "$1" ]]; then
+        upload_single_file_to_vimeo "$1"
+    else
+        echo "❌ Path not found: $1"
+        exit 1
+    fi
 fi
