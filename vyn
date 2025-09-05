@@ -520,10 +520,10 @@ list_available_plugins_from_manifest() {
         
         local status="Not Installed"
         if [[ -f "$PLUGIN_DIR/${plugin_id}.sh" ]]; then
-            status="${GREEN}Installed${NC}"
+            status="Installed"
         fi
         
-        echo "$((i+1))) ${CYAN}$plugin_name${NC} (v$plugin_version) [$plugin_category]"
+        echo "$((i+1))) $plugin_name (v$plugin_version) [$plugin_category]"
         echo "   📝 $plugin_description"
         echo "   📊 Status: $status"
         echo ""
@@ -647,10 +647,10 @@ list_installed_plugins() {
             
             if source "$plugin" 2>/dev/null && declare -p plugin_name plugin_version plugin_description >/dev/null 2>&1; then
                 plugin_display_name="$plugin_name"
-                echo "$count) ${CYAN}$plugin_display_name${NC} (v$plugin_version)"
+                echo "$count) $plugin_display_name (v$plugin_version)"
                 echo "   📝 $plugin_description"
             else
-                echo "$count) ${CYAN}$(basename "$plugin" .sh)${NC}"
+                echo "$count) $(basename "$plugin" .sh)"
                 echo "   📝 Custom plugin"
             fi
             
@@ -1233,18 +1233,9 @@ show_help() {
     # Examples section
     printf "${GREEN}💡 Examples${NC}\n"
     printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} input.mkv output.mp4${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} /path/to/video.avi converted.webm${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --batch${NC} ${YELLOW}# Batch convert directory${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --audio-only movie.mp4 audio.mp3${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --gpu input.mkv output.mp4${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --preset cinema input.mov output.mp4${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --filters deinterlace video.ts clean.mp4${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --analytics --gpu movie.mkv output.mp4${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --show-analytics${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --batch${NC} ${YELLOW}# Convert directory${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --add-plugins${NC} ${YELLOW}# Install plugins${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --list-plugins${NC}\n"
-    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --plugin vimeo-uploader /videos/folder/${NC}\n"
-    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} movie.mov${NC} ${YELLOW}# Prompts for output${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} --plugin vimeo-uploader /videos/folder/${NC}\n"
     echo ""
     
     # Supported formats

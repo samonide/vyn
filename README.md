@@ -7,12 +7,12 @@
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![FFmpeg](https://img.shields.io/badge/Powered%20by-FFmpeg-orange.svg)](https://ffmpeg.org/)
-[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen.svg)](https://github.com/samonide/vyn/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.svg)](https://github.com/samonide/vyn/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)]()
 
-*A powerful, professional video converter that transforms complex FFmpeg workflows into simple, beautiful commands*
+*A powerful, professional video converter with seamless plugin system for uploads and processing*
 
-[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [📋 CHANGELOG](CHANGELOG.md) • [🤝 Contributing](#-contributing)
+[🚀 Quick Start](#-quick-start) • [🔌 Plugins](#-plugins) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [📋 CHANGELOG](CHANGELOG.md)
 
 </div>
 
@@ -27,8 +27,35 @@ git clone https://github.com/samonide/vyn.git && cd vyn && ./install-vyn.sh
 # Convert a video (interactive mode)
 vyn movie.mkv movie.mp4
 
-# That's it! Vyn guides you through the rest.
+# Install plugins for extended functionality
+vyn --add-plugins
+
+# Upload video folders to Vimeo automatically
+vyn --plugin vimeo-uploader /path/to/videos/
 ```
+
+## 🔌 Plugins (New in v1.4.0)
+
+Vyn now features a comprehensive plugin system for extended functionality:
+
+### Plugin Management
+- **`vyn --add-plugins`** - Install plugins from repository
+- **`vyn --list-plugins`** - List installed plugins  
+- **`vyn --remove-plugins`** - Remove installed plugins
+
+### Available Plugins
+
+#### 🎬 Vimeo Uploader
+Upload entire video folders to Vimeo with automatic playlist creation:
+```bash
+vyn --plugin vimeo-uploader /videos/january/
+```
+**Features:**
+- Batch upload video folders
+- Auto-creates Vimeo playlists/albums
+- Generates `links.txt` with all URLs
+- One-time setup with personal access token
+- Multi-format support (MP4, AVI, MOV, MKV, etc.)
 
 ## ✨ Features
 
@@ -39,10 +66,15 @@ vyn movie.mkv movie.mp4
 - **🎮 GPU Acceleration**: Hardware-accelerated encoding (NVENC, VAAPI, QuickSync)
 - **🔍 Dry Run**: Preview operations safely without touching files
 
-### 🎯 **Professional Features (v1.3.0)**
+### 🔌 **Plugin System (v1.4.0)**
+- **📦 Plugin Repository**: Official plugin marketplace with rich metadata
+- **🛠️ Easy Management**: Install, list, and remove plugins with simple commands
+- **🎬 Upload Integrations**: Seamless integration with video platforms (Vimeo, more coming)
+- **⚡ Extensible**: Plugin architecture for future features (YouTube, thumbnails, subtitles)
+
+### 🎯 **Professional Features**
 - **🎬 Professional Presets**: Industry-standard settings for broadcast, cinema, web, mobile, archive, and social media
 - **📊 Analytics Framework**: Track conversion performance, file sizes, and optimization metrics
-- **🔌 Plugin System**: Extensible architecture for custom video processing workflows
 - **🎨 Video Filters**: Apply deinterlacing, denoising, scaling, and color correction
 - **📄 Configuration Management**: Save and load workflow preferences for consistent results
 

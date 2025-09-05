@@ -5,6 +5,38 @@ All notable changes to Vyn will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-09-05
+
+### Added
+- **🔌 Comprehensive Plugin Management System** 
+  - `--add-plugins` - Interactive plugin installation from official repository
+  - `--remove-plugins` - Interactive plugin removal interface
+  - Enhanced `--list-plugins` with detailed plugin information
+  - `plugins.json` manifest system with rich metadata
+
+- **🎬 Vimeo Uploader Plugin**
+  - Batch upload entire video folders to Vimeo
+  - Automatic playlist/album creation for each folder
+  - One-time personal access token setup
+  - Generates `links.txt` with all video and playlist URLs
+  - Multi-format support (MP4, AVI, MOV, MKV, WebM, FLV, WMV)
+  - Seamless workflow integration - skips standard conversion prompts
+
+- **📦 Plugin Repository Architecture**
+  - Organized plugin source files in `plugins/` directory
+  - Comprehensive plugin documentation and setup instructions
+  - Automatic dependency validation and requirement checking
+  - Plugin categorization (Upload, Conversion, Utility)
+
+### Changed
+- **Streamlined Help System** - Reduced examples to focus on core functionality
+- **Enhanced User Experience** - Directory-based plugins bypass conversion workflow
+- **Better Plugin Integration** - Plugins execute directly without video conversion prompts
+
+### Fixed
+- **Color Display Issues** - Removed problematic color codes in plugin listings
+- **Plugin Workflow** - Directory inputs now work seamlessly with plugin system
+
 ## [1.3.0] - 2025-09-04
 
 ### Added
