@@ -595,14 +595,46 @@ process_batch_files() {
     local output_dir="$2"
     local target_format="$3"
     
-    # Find all video files in input directory
+    # Define supported input formats (same as in validate_file_format function)
+    local supported_input="mp4 mkv avi mov webm m4v flv 3gp wmv mpg mpeg ts"
+    
+    # Build find command with all supported extensions
+    local find_conditions=()
+    local first=true
+    for ext in $supported_input; do
+        if [[ "$first" == true ]]; then
+            find_conditions+=("-iname" "*.$ext")
+            first=false
+        else
+            find_conditions+=("-o" "-iname" "*.$ext")
+        fi
+    done
+    
+    # Find all video files in input directory using supported extensions
     local video_files=()
     while IFS= read -r -d '' file; do
         video_files+=("$file")
-    done < <(find "$input_dir" -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.avi" -o -iname "*.mov" -o -iname "*.webm" -o -iname "*.flv" -o -iname "*.wmv" -o -iname "*.m4v" -o -iname "*.3gp" -o -iname "*.ts" \) -print0)
+    done < <(find "$input_dir" -type f \( "${find_conditions[@]}" \) -print0 2>/dev/null)
+    
+    # Also check for common non-standard extensions that might be video files
+    # This handles cases like .nix files that are actually video files
+    local common_alt_exts="nix ts4 m2ts mts mod vob"
+    for ext in $common_alt_exts; do
+        while IFS= read -r -d '' file; do
+            if [[ -f "$file" ]]; then
+                # Use file command to check if it's actually a video file
+                if file "$file" 2>/dev/null | grep -q -i "video\|media\|mp4\|mov\|avi\|mkv"; then
+                    video_files+=("$file")
+                    print_info "🔍 Detected video file with non-standard extension: $(basename "$file")"
+                fi
+            fi
+        done < <(find "$input_dir" -type f -iname "*.$ext" -print0 2>/dev/null)
+    done
     
     if [[ ${#video_files[@]} -eq 0 ]]; then
         print_error "No video files found in '$input_dir'"
+        print_info "Supported formats: $supported_input"
+        print_info "💡 Tip: Files with non-standard extensions will be auto-detected if they contain video data"
         exit 1
     fi
     
@@ -1288,6 +1320,18 @@ do_remux() {
     else
         echo ""
         print_error "Remux operation failed!"
+        case $exit_code in
+            1)
+                print_info "FFmpeg encountered a general error. Check input file format and output path."
+                ;;
+            234)
+                print_info "FFmpeg encountered an issue with file access or invalid filename."
+                print_info "This often happens with special characters in filenames or permission issues."
+                ;;
+            *)
+                print_info "FFmpeg exited with code $exit_code."
+                ;;
+        esac
         print_info "This might happen if the codecs are not compatible with the output container."
         print_info "Try using encode mode instead."
         if [[ -f /tmp/vyn_output.log ]]; then
@@ -1486,6 +1530,18 @@ do_encode() {
     else
         echo ""
         print_error "Encoding operation failed!"
+        case $exit_code in
+            1)
+                print_info "FFmpeg encountered a general error. Check input file format and codec compatibility."
+                ;;
+            234)
+                print_info "FFmpeg encountered an issue with file access or invalid filename."
+                print_info "This often happens with special characters in filenames or permission issues."
+                ;;
+            *)
+                print_info "FFmpeg exited with code $exit_code."
+                ;;
+        esac
         print_info "Check the error messages above for details."
         if [[ -f /tmp/vyn_output.log ]]; then
             print_info "Error details:"
@@ -1806,6 +1862,11 @@ main() {
                 print_error "Output filename cannot be empty!"
                 exit 1
             fi
+            # Strip surrounding quotes if user included them
+            output_file="${output_file%\"}"
+            output_file="${output_file#\"}"
+            output_file="${output_file%\'}"
+            output_file="${output_file#\'}"
         fi
         
         # Validate input file
@@ -1869,6 +1930,11 @@ main() {
             print_error "Output filename cannot be empty!"
             exit 1
         fi
+        # Strip surrounding quotes if user included them
+        output_file="${output_file%\"}"
+        output_file="${output_file#\"}"
+        output_file="${output_file%\'}"
+        output_file="${output_file#\'}"
     fi
     
     # Validate output directory exists and is writable
