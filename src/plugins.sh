@@ -121,6 +121,11 @@ load_plugin_manifest() {
     return 0
 }
 
+# List available plugins (wrapper for compatibility)
+list_available_plugins() {
+    list_installed_plugins
+}
+
 # List available plugins from manifest
 list_available_plugins_from_manifest() {
     if ! load_plugin_manifest; then
