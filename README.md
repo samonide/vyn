@@ -156,6 +156,12 @@ Built with [FFmpeg](https://ffmpeg.org/) • JSON processing by [jq](https://jql
 
 ---
 
+## ⚠️ Disclaimer
+
+This project utilized AI assistance for code documentation, comments, and README generation.
+
+---
+
 <div align="center">
 
 **[⭐ Star on GitHub](https://github.com/samonide/vyn)** • **[🐛 Report Issues](https://github.com/samonide/vyn/issues)** • **[🤝 Contribute](docs/Contributing.md)**
