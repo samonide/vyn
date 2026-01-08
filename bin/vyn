@@ -1050,7 +1050,7 @@ main() {
                 exit 0
                 ;;
             --list-plugins)
-                list_available_plugins
+                list_installed_plugins
                 exit 0
                 ;;
             --add-plugins)
