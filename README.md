@@ -2,484 +2,164 @@
 
 # 🎬 Vyn
 
-**Video. Simplified.**
+**Professional Video Converter for the Command Line**
 
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![FFmpeg](https://img.shields.io/badge/Powered%20by-FFmpeg-orange.svg)](https://ffmpeg.org/)
 [![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.svg)](https://github.com/samonide/vyn/releases)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)]()
 
-*A powerful, professional video converter with seamless plugin system for uploads and processing*
+*Fast, intuitive video conversion powered by FFmpeg with professional presets and plugin support*
 
-[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [🎯 Usage](#-usage) • [🔌 Plugins](#-plugins) • [📋 CHANGELOG](CHANGELOG.md)
+[📖 Documentation](docs/Usage.md) • [🚀 Quick Start](#-quick-start) • [🔌 Plugins](docs/Plugins.md) • [📋 Changelog](CHANGELOG.md)
 
 </div>
 
 ---
 
+## ✨ Features
+
+- **⚡ Dual Modes** - Remux (instant container swap) or Encode (quality-optimized conversion)
+- **🎯 Professional Presets** - Broadcast, Cinema, Web, Mobile, Archive, Social Media
+- **🗂️ Batch Processing** - Convert entire directories with consistent settings
+- **🎮 GPU Acceleration** - NVENC, VAAPI, QuickSync hardware encoding
+- **🔌 Plugin System** - Extensible architecture for uploads and custom workflows
+- **📊 Analytics** - Track performance, file sizes, and optimization metrics
+- **🎨 Filters & Effects** - Deinterlacing, denoising, scaling, color correction
+- **🎵 Audio Extraction** - Extract audio in MP3, FLAC, AAC, Opus formats
+
 ## 🚀 Quick Start
 
-### One-Command Installation
-```bash
-# Install vyn with a single command
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
-```
+### Installation
 
-### Manual Installation
 ```bash
-# Clone and install locally
+# One-command installation
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
+
+# Or manual installation
 git clone https://github.com/samonide/vyn.git && cd vyn && ./install-vyn.sh
 ```
 
 ### Basic Usage
-```bash
-# Convert a video (interactive mode)
-vyn movie.mkv movie.mp4
 
-# Professional preset conversion
-vyn --preset cinema input.mov output.mp4
+```bash
+# Interactive mode - guided conversion
+vyn input.mkv output.mp4
+
+# Professional preset
+vyn --preset cinema movie.mov movie.mp4
 
 # Batch convert directory
 vyn --batch /path/to/videos/
+
+# GPU-accelerated encoding
+vyn --gpu input.avi output.mp4
+
+# Extract audio
+vyn --audio-only video.mp4 audio.mp3
 ```
 
-## ✨ Features
+### Professional Presets
 
-### 🎯 **Core Capabilities**
-- **🚀 Dual Modes**: Lightning-fast **Remux** (container-only) or precision **Encode** (quality control)
-- **🗂️ Batch Processing**: Convert entire directories with intelligent file discovery
-- **🎵 Audio Extraction**: Extract audio tracks in any format (MP3, FLAC, AAC, Opus)
-- **🎮 GPU Acceleration**: Hardware-accelerated encoding (NVENC, VAAPI, QuickSync)
-- **🔍 Dry Run**: Preview operations safely without touching files
-
-### 🔌 **Plugin System (v1.4.0)**
-- **📦 Plugin Repository**: Official plugin marketplace with rich metadata
-- **🛠️ Easy Management**: Install, list, and remove plugins with simple commands
-- **🎬 Upload Integrations**: Seamless integration with video platforms (Vimeo, more coming)
-- **⚡ Extensible**: Plugin architecture for future features (YouTube, thumbnails, subtitles)
-
-### 🎯 **Professional Features**
-- **🎬 Professional Presets**: Industry-standard settings for broadcast, cinema, web, mobile, archive, and social media
-- **📊 Analytics Framework**: Track conversion performance, file sizes, and optimization metrics
-- **🎨 Video Filters**: Apply deinterlacing, denoising, scaling, and color correction
-- **📄 Configuration Management**: Save and load workflow preferences for consistent results
-
-### 🎨 **User Experience**
-- **💫 Interactive CLI**: Beautiful, intuitive prompts with real-time feedback
-- **⚡ Progress Tracking**: Animated progress bars with ETA and speed metrics
-- **🎨 Professional Interface**: Color-coded output with icons and visual hierarchy
-- **🔄 Smart Defaults**: Optimal settings chosen automatically based on your content
-- **🌍 Cross-Platform**: Works seamlessly on Linux, macOS, and Windows (WSL)
-
----
-
-## 📋 Installation
-
-### Automatic Installation
+| Preset | CRF | Resolution | Best For |
+|--------|-----|------------|----------|
+| `broadcast` | 18 | Original | TV/Broadcasting |
+| `cinema` | 16 | Original | Film Industry |
+| `web` | 23 | 1080p | YouTube, Streaming |
+| `mobile` | 28 | 720p | Mobile Devices |
+| `archive` | 12 | Original | Preservation |
+| `social` | 26 | 1080x1080 | Instagram, TikTok |
 
 ```bash
-git clone https://github.com/samonide/vyn.git
-cd vyn
-./install-vyn.sh
+# Use presets
+vyn --preset web input.mov output.mp4
+vyn --preset mobile --gpu video.avi mobile.mp4
 ```
 
-The installer automatically:
-- ✅ Detects your system and package manager
-- ✅ Installs FFmpeg and jq dependencies
-- ✅ Configures PATH for global access
-- ✅ Validates installation
+## 📖 Documentation
 
-### Manual Installation
+- **[Usage Guide](docs/Usage.md)** - Complete documentation with examples
+- **[Plugin System](docs/Plugins.md)** - Plugin development and management
+- **[Contributing](docs/Contributing.md)** - How to contribute to Vyn
+- **[Development Roadmap](ROADMAP.md)** - Project development plan
+- **[Quick Start Dev](QUICKSTART-DEV.md)** - Start developing immediately
+- **[Changelog](CHANGELOG.md)** - Version history and roadmap
 
-**Install Dependencies:**
-```bash
-# Arch Linux / CachyOS
-sudo pacman -S ffmpeg jq
-
-# Ubuntu / Debian  
-sudo apt install ffmpeg jq
-
-# Fedora
-sudo dnf install ffmpeg jq
-
-# macOS
-brew install ffmpeg jq
-```
-
-**Install Vyn:**
-```bash
-chmod +x vyn
-sudo ln -sf "$(pwd)/vyn" /usr/local/bin/vyn
-```
-
----
-
-## 🎯 Usage
-
-### Basic Conversion
-```bash
-# Interactive mode - Vyn guides you through options
-vyn input.mkv output.mp4
-
-# Automatic mode - Quick conversion with smart defaults  
-vyn movie.avi movie.mp4
-```
-
-### Professional Workflows
+## 🔌 Quick Plugin Usage
 
 ```bash
-# Cinema-quality conversion with BT.709 colorspace
-vyn --preset cinema input.mov output.mp4
-
-# Broadcast-ready with deinterlacing
-vyn --preset broadcast source.ts output.mp4
-
-# Web-optimized streaming format
-vyn --preset web video.mkv video.webm
-
-# Mobile-optimized with 720p scaling
-vyn --preset mobile large_video.avi mobile.mp4
-
-# Archive-quality preservation
-vyn --preset archive original.mov archive.mkv
-
-# Social media square format
-vyn --preset social landscape.mp4 square.mp4
-```
-
-### Batch Operations
-```bash
-# Convert entire directories
-vyn --batch
-
-# GPU-accelerated batch processing
-vyn --batch --gpu
-
-# Batch with professional preset
-vyn --batch --preset web
-```
-
-### Advanced Features
-```bash
-# Extract audio only
-vyn --audio-only movie.mp4 soundtrack.mp3
-
-# Apply video filters
-vyn --filters deinterlace old_video.ts clean.mp4
-vyn --filters "denoise,scale=1920:1080" input.avi output.mp4
-
-# Enable analytics tracking
-vyn --analytics --gpu movie.mkv output.mp4
-
-# Use custom plugins
-vyn --plugin example input.mp4 processed.mp4
-
-# Preview operations (dry run)
-vyn --dry-run --preset cinema input.mov output.mp4
-```
-
-### Utility Commands
-```bash
-# Show version and system info
-vyn --version
-
-# Display comprehensive help
-vyn --help
-
-# View analytics summary
-vyn --show-analytics
-
 # List available plugins
 vyn --list-plugins
 
-# Use custom configuration
-vyn --config ~/my-settings.conf input.avi output.mp4
-```
-
----
-
-## 📊 Professional Presets
-
-| Preset | CRF | Resolution | Use Case | Features |
-|--------|-----|------------|----------|----------|
-| **Broadcast** | 18 | Original | TV/Broadcasting | Deinterlacing, broadcast-ready |
-| **Cinema** | 16 | Original | Film Industry | BT.709 colorspace, maximum quality |
-| **Web** | 23 | 1080p | Streaming | Optimized for YouTube, Twitch |
-| **Mobile** | 28 | 720p | Mobile Devices | Battery-efficient playback |
-| **Archive** | 12 | Original | Long-term Storage | Near-lossless preservation |
-| **Social Media** | 26 | 1080x1080 | Social Platforms | Square format for Instagram, TikTok |
-
----
-
-## 🎨 Quality Guide
-
-### CRF Values (Lower = Higher Quality)
-```
-🔥 Excellent (CRF 16-18): Archival, professional work
-⭐ Great     (CRF 20-23): General use, streaming  
-👍 Good      (CRF 24-28): Web, mobile devices
-📱 Acceptable (CRF 29-32): Quick sharing, previews
-```
-
-### Mode Selection
-- **🏃‍♂️ Remux**: Change container only (MKV → MP4) - seconds, no quality loss
-- **🎯 Encode**: Full conversion with compression - minutes, size optimization
-- **🗂️ Batch**: Process multiple files with consistent settings
-- **🎵 Audio**: Extract audio tracks in any format
-
----
-
-## 🔌 Plugins (New in v1.4.0)
-
-Vyn features a comprehensive plugin system for extended functionality:
-
-### Plugin Management
-```bash
-# Install plugins from repository
+# Install plugins
 vyn --add-plugins
 
-# List installed plugins  
-vyn --list-plugins
-
-# Remove installed plugins
-vyn --remove-plugins
-
-# Use a plugin
-vyn --plugin quality-analyzer /path/to/videos/
+# Use a plugin (e.g., Vimeo uploader)
+vyn --plugin vimeo-uploader /path/to/videos/
 ```
 
-### Plugin Development
-For detailed plugin documentation, available plugins, and development guides, see [plugins/README.md](plugins/README.md).
+## 🛠️ Requirements
 
----
+- **FFmpeg** (required) - Video processing engine
+- **jq** (optional) - JSON processing for plugins
+- **Bash 4.0+** - Shell environment
 
-## � Configuration
-
----
-
-## 📊 Analytics & Tracking
-
-Track conversion performance and optimize your workflows:
+## 📋 Common Commands
 
 ```bash
-# Enable analytics for a conversion
-vyn --analytics input.mkv output.mp4
+# Help and information
+vyn --help              # Show all options
+vyn --version           # Show version info
 
-# View analytics summary
-vyn --show-analytics
+# Quality modes
+vyn --preset cinema     # Professional presets
+vyn --gpu               # Enable GPU acceleration
+vyn --analytics         # Track performance metrics
 
-# Analytics data location
-~/.config/vyn/analytics.json
+# Batch operations
+vyn --batch             # Convert directory
+vyn --batch --preset web  # Batch with preset
+
+# Advanced features
+vyn --filters denoise   # Apply video filters
+vyn --show-analytics    # View performance data
+vyn --config file.conf  # Use custom config
 ```
 
-**Analytics Include:**
-- ⏱️ Conversion time and speed
-- 📊 File size comparisons
-- 🎯 Compression ratios
-- 🔧 Settings used
-- 📈 Performance trends
+## 🎨 Supported Formats
 
----
-
-## 🎚️ Supported Formats
-
-### Input Formats
-**Video**: MKV, MP4, AVI, MOV, WebM, FLV, WMV, M4V, 3GP, TS, VOB, MPG, MPEG  
+**Input**: MKV, MP4, AVI, MOV, WebM, FLV, WMV, M4V, 3GP, TS, VOB, MPG  
+**Output**: MP4, MKV, WebM, AVI  
 **Audio**: MP3, FLAC, AAC, Opus, WAV, OGG, M4A
 
-### Output Formats
-
-| Format | Best For | Codecs |
-|--------|----------|---------|
-| **MP4** | Universal compatibility | H.264 + AAC |
-| **MKV** | High quality, features | H.264/H.265 + AAC |
-| **WebM** | Web streaming | VP9 + Opus |
-| **AVI** | Legacy compatibility | H.264 + AAC |
-
----
-
-## 🛠️ Advanced Usage
-
-### Configuration Files
-```bash
-# Save current settings
-vyn --save-config
-
-# Use custom config
-vyn --config ~/work-settings.conf input.avi output.mp4
-
-# Config location
-~/.config/vyn/config.conf
-```
-
-### Integration Examples
-```bash
-# Automated workflow
-for video in *.mkv; do
-    vyn --preset web --gpu "$video" "${video%.*}.mp4"
-done
-
-# Watch folder automation  
-inotifywait -m ~/incoming -e create | while read dir action file; do
-    vyn --preset mobile "$dir$file" ~/converted/"${file%.*}.mp4"
-done
-
-# Batch processing with specific settings
-find /media/videos -name "*.avi" -exec vyn --preset cinema {} {}.mp4 \;
-```
-
----
-
-## 🔍 Troubleshooting
-
-### Common Solutions
-
-**"FFmpeg not found"**
-```bash
-# Install FFmpeg first
-sudo pacman -S ffmpeg  # Arch/CachyOS
-sudo apt install ffmpeg  # Ubuntu/Debian
-brew install ffmpeg     # macOS
-```
-
-**"Permission denied"**
-```bash
-chmod +x vyn
-```
-
-**"GPU acceleration not available"**
-- Install appropriate drivers (NVIDIA/AMD/Intel)
-- Check GPU support: `ffmpeg -encoders | grep nvenc`
-- GPU acceleration automatically falls back to CPU
-
-**Performance Issues**
-- Use `--gpu` for hardware acceleration
-- Consider `--preset mobile` for faster encoding
-- Ensure sufficient disk space and RAM
-- Use SSD storage for better I/O performance
-
-### Getting Help
-```bash
-# Comprehensive help
-vyn --help
-
-# System information
-vyn --version  
-
-# Check dependencies
-ffmpeg -version && jq --version
-```
-
----
-
-## 📁 Project Structure
+## 📊 Project Structure
 
 ```
 vyn/
-├── 🎬 vyn                  # Main executable
-├── ⚙️  install-vyn.sh       # Automatic installer
-├── 📖 README.md            # This documentation
-├── 📋 CHANGELOG.md         # Version history & roadmap
-├── 📜 LICENSE              # Unlicense (Public Domain)
-├── 🚫 .gitignore           # Git ignore patterns  
-└── 📦 package.json         # Project metadata
+├── bin/            # Main executable
+├── src/            # Source modules
+├── plugins/        # Plugin repository
+├── docs/           # Documentation
+├── config/         # Configuration templates
+├── tests/          # Test suite
+└── install-vyn.sh  # Installer script
 ```
-
----
-
-## 🚀 What's New in v1.3.0
-
-**🎯 Professional Workflow Integration**
-- **Industry Presets**: Broadcast, Cinema, Web, Mobile, Archive, Social Media
-- **Analytics Framework**: Performance tracking with JSON logging  
-- **Plugin Architecture**: Extensible custom processing system
-- **Video Filters**: Deinterlacing, denoising, scaling, color correction
-- **Enhanced CLI**: New options for professional workflows
-
-**🔧 Technical Improvements**
-- **Configuration System**: Persistent settings and workflow management
-- **Error Handling**: Robust validation and recovery mechanisms  
-- **Performance**: Optimized processing and resource utilization
-- **Documentation**: Comprehensive help system and examples
-
----
-
-## 🗺️ Roadmap
-
-### Upcoming Features
-- **v1.4.0**: Cloud integration, AI-powered optimization, streaming protocols
-- **v2.0.0**: Web interface, distributed processing, advanced analytics
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed roadmap and version history.
-
----
-
-## 🤝 Contributing
-
-Vyn is **public domain** - contribute freely without legal complexity!
-
-### Ways to Contribute
-- 🐛 **Report Bugs**: [Open an issue](https://github.com/samonide/vyn/issues)
-- 💡 **Suggest Features**: [Feature requests welcome](https://github.com/samonide/vyn/issues)
-- 🔧 **Submit Code**: [Pull requests](https://github.com/samonide/vyn/pulls)
-- 📖 **Improve Docs**: Documentation improvements
-- 🌟 **Spread the Word**: Share with fellow creators
-
-### Development Setup
-```bash
-git clone https://github.com/samonide/vyn.git
-cd vyn
-chmod +x vyn install-vyn.sh
-
-# Test your changes
-./vyn --version
-./vyn --help
-```
-
----
 
 ## 📄 License
 
-**Public Domain** - [Unlicense](https://unlicense.org/)
-
-This means you can:
-- ✅ Use commercially
-- ✅ Modify freely  
-- ✅ Distribute without restrictions
-- ✅ Use in proprietary software
-- ✅ No attribution required (but appreciated!)
-
----
+**Public Domain** - [Unlicense](https://unlicense.org/)  
+Use, modify, and distribute freely without restrictions.
 
 ## 🙏 Acknowledgments
 
-- **[FFmpeg Team](https://ffmpeg.org/)** - Incredible video processing engine
-- **[jq Authors](https://jqlang.github.io/jq/)** - JSON processing excellence  
-- **Community Contributors** - Testing, feedback, and improvements
-- **Video Creators Worldwide** - Inspiration and real-world use cases
-
----
-
-## 📊 Project Stats
-
-- **Language**: Bash Shell Script
-- **Core Engine**: FFmpeg  
-- **Dependencies**: FFmpeg (required), jq (optional)
-- **Platforms**: Linux, macOS, Windows (WSL)
-- **License**: Unlicense (Public Domain)
-- **Size**: ~2000+ lines of refined code
+Built with [FFmpeg](https://ffmpeg.org/) • JSON processing by [jq](https://jqlang.github.io/jq/)
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for the video creation community**
+**[⭐ Star on GitHub](https://github.com/samonide/vyn)** • **[🐛 Report Issues](https://github.com/samonide/vyn/issues)** • **[🤝 Contribute](docs/Contributing.md)**
 
-[🌟 Star on GitHub](https://github.com/samonide/vyn) • [🐛 Report Issue](https://github.com/samonide/vyn/issues) • [💡 Request Feature](https://github.com/samonide/vyn/issues) • [🤝 Contribute](https://github.com/samonide/vyn/pulls)
-
----
-
-*"Making professional video conversion as simple as it should be"*
+*Making professional video conversion simple and powerful*
 
 </div>

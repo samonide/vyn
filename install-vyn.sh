@@ -2,8 +2,12 @@
 # Vyn Video Converter - One-Command Installer
 # Install vyn with a single command: sh -c "$(curl -fsSL https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh)"
 # Cross-platform installer for Linux, macOS, and Windows
+# Version: 1.4.0
 
 set -e
+
+readonly INSTALL_DIR="/usr/local/bin"
+readonly VYN_SCRIPT="bin/vyn"
 
 # Colors
 RED='\033[0;31m'
@@ -172,7 +176,7 @@ create_install_dir() {
 install_vyn() {
     local install_dir=$(create_install_dir)
     local temp_dir=$(mktemp -d)
-    local vyn_url="https://raw.githubusercontent.com/samonide/vyn/main/vyn"
+    local vyn_url="https://raw.githubusercontent.com/samonide/vyn/main/bin/vyn"
     
     print_info "Downloading vyn from GitHub..."
     

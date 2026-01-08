@@ -1,0 +1,1519 @@
+#!/usr/bin/env bash
+
+# Vyn - A Powerful Video Format Converter
+# Fast, intuitive video conversion using FFmpeg with interactive CLI
+# 
+# Repository: https://github.com/samonide/vyn
+# Author: samonide
+# License: Unlicense
+# Version: 1.5.0-dev
+
+set -euo pipefail
+
+# Script information
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+readonly SCRIPT_NAME="vyn"
+readonly VERSION="1.5.0-dev"
+readonly AUTHOR="samonide"
+readonly REPOSITORY="https://github.com/samonide/vyn"
+
+# Global variables (must be declared before sourcing modules)
+declare -g OPERATION_MODE=""
+declare -g CRF_VALUE=""
+declare -g USE_COLOR=true
+declare -g DRY_RUN=false
+declare -g BATCH_MODE=false
+declare -g AUDIO_ONLY=false
+declare -g USE_GPU=false
+declare -g GPU_TYPE=""
+declare -g DELETE_ORIGINAL=false
+declare -g CONFIG_FILE="$HOME/.config/vyn/config.conf"
+declare -g BATCH_INPUT_DIR=""
+declare -g BATCH_OUTPUT_DIR=""
+declare -g BATCH_FORMAT=""
+declare -g PRESET_MODE=""
+declare -g PROFESSIONAL_PRESET=""
+declare -g VIDEO_FILTERS=""
+declare -g ENABLE_ANALYTICS=false
+declare -g ANALYTICS_FILE="$HOME/.config/vyn/analytics.json"
+declare -g PLUGIN_DIR="$HOME/.config/vyn/plugins"
+declare -g PLUGIN_NAME=""
+declare -g PLUGIN_MANIFEST="$SCRIPT_DIR/plugins.json"
+declare -g PLUGIN_REPO_DIR="$SCRIPT_DIR/plugins"
+# Vimeo integration variables (v1.4.0)
+declare -g VIMEO_UPLOAD=false
+declare -g VIMEO_FOLDER=""
+declare -g VIMEO_TOKEN=""
+declare -g VIMEO_PRIVACY="unlisted"
+declare -g VIMEO_PLAYLIST=""
+declare -g VIMEO_TITLE=""
+declare -g VIMEO_DESCRIPTION=""
+declare -g LINKS_FILE=""
+declare -g VIMEO_CONFIG_FILE="$HOME/.config/vyn/vimeo.conf"
+
+# Function to initialize colors based on USE_COLOR setting
+init_colors() {
+    if [[ "${USE_COLOR}" == true ]]; then
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        BLUE='\033[0;34m'
+        PURPLE='\033[0;35m'
+        CYAN='\033[0;36m'
+        WHITE='\033[1;37m'
+        NC='\033[0m' # No Color
+    else
+        RED=''
+        GREEN=''
+        YELLOW=''
+        BLUE=''
+        PURPLE=''
+        CYAN=''
+        WHITE=''
+        NC=''
+    fi
+}
+
+# Initialize colors first
+init_colors
+
+# Source all modules (after colors are initialized)
+source "${PROJECT_ROOT}/src/utils.sh"
+source "${PROJECT_ROOT}/src/config.sh"
+source "${PROJECT_ROOT}/src/gpu.sh"
+source "${PROJECT_ROOT}/src/presets.sh"
+source "${PROJECT_ROOT}/src/analytics.sh"
+source "${PROJECT_ROOT}/src/plugins.sh"
+source "${PROJECT_ROOT}/src/batch.sh"
+source "${PROJECT_ROOT}/src/filters.sh"
+
+# Cleanup function for graceful exit
+cleanup() {
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        echo ""
+        print_warning "Operation interrupted or failed (exit code: $exit_code)"
+        print_info "Any partial output files may need to be cleaned up manually."
+    fi
+    exit $exit_code
+}
+
+# Set up signal handling
+trap cleanup EXIT
+trap 'cleanup' INT TERM
+
+# Note: print_color, print_error, print_warning, print_info, print_success,
+# check_dependencies, and other utility functions are now in src/utils.sh
+# Configuration functions (load_config, save_config) are now in src/config.sh
+# GPU functions (detect_gpu_acceleration) are now in src/gpu.sh
+# Preset functions are now in src/presets.sh
+# Analytics functions are now in src/analytics.sh
+# Plugin functions are now in src/plugins.sh
+# Batch processing functions are now in src/batch.sh
+# Filter functions are now in src/filters.sh
+
+# Commented out - now in src/config.sh:
+# load_config() { ... }
+# load_vimeo_config() { ... }
+# save_config() { ... }
+
+# Commented out - now in src/gpu.sh:
+# detect_gpu_acceleration() { ... }
+
+# Commented out - now in src/presets.sh:
+# load_professional_presets() { ... }
+# - print_success()
+# - check_dependencies()
+
+# Function to print error messages to stderr
+# print_error() {
+#     print_color "$RED" "ERROR: $1" >&2
+# }
+
+# Function to print warning messages
+# print_warning() {
+#     print_color "$YELLOW" "WARNING: $1"
+# }
+
+# Function to print info messages
+# print_info() {
+#     print_color "$CYAN" "INFO: $1"
+# }
+
+# Function to print success messages
+# print_success() {
+#     print_color "$GREEN" "$1"
+# }
+
+# Function to check if required tools are installed
+# check_dependencies() {
+#     ... moved to src/utils.sh ...
+# }
+
+# Function to show help
+show_help() {
+    # Header with branding (matching version style)
+    echo ""
+    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC}\n"
+    printf "${CYAN}Video. Simplified.${NC}\n"
+    echo ""
+    
+    # Usage section with visual hierarchy
+    printf "${GREEN}📋 Usage${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} [input_file] [output_file]${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} [OPTIONS]${NC}\n"
+    echo ""
+    
+    # Options with clean layout
+    printf "${GREEN}⚙️  Options${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}-h, --help${NC}       ${YELLOW}Show this help message${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}-v, --version${NC}    ${YELLOW}Show version and dependencies${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--no-color${NC}       ${YELLOW}Disable colored output${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--dry-run${NC}        ${YELLOW}Preview operations safely${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--batch${NC}          ${YELLOW}Batch processing mode${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--audio-only${NC}     ${YELLOW}Extract audio only${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--gpu${NC}            ${YELLOW}Enable GPU acceleration${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--config${NC}         ${YELLOW}Specify config file path${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--save-config${NC}    ${YELLOW}Save current settings to config${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--preset${NC}         ${YELLOW}Use professional preset (broadcast, cinema, web, mobile)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--filters${NC}        ${YELLOW}Apply video filters (deinterlace, denoise, scale)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--analytics${NC}      ${YELLOW}Enable conversion analytics tracking${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--show-analytics${NC} ${YELLOW}Show analytics summary${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--list-plugins${NC}   ${YELLOW}List installed plugins${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--add-plugins${NC}    ${YELLOW}Install plugins from repository${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--remove-plugins${NC} ${YELLOW}Remove installed plugins${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}--plugin${NC}         ${YELLOW}Use custom plugin for processing${NC}\n"
+    echo ""
+    
+    # Examples section
+    printf "${GREEN}💡 Examples${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}${SCRIPT_NAME} input.mkv output.mp4${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --batch${NC} ${YELLOW}# Convert directory${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}${SCRIPT_NAME} --add-plugins${NC} ${YELLOW}# Install plugins${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}${SCRIPT_NAME} --plugin vimeo-uploader /videos/folder/${NC}\n"
+    echo ""
+    
+    # Supported formats
+    printf "${GREEN}📁 Supported Formats${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Input:${NC}   ${YELLOW}mkv, avi, mov, mp4, webm, flv, wmv, m4v, 3gp, ts${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Output:${NC}  ${YELLOW}mp4, mkv, webm, avi, mov, m4v${NC}\n"
+    echo ""
+    
+    # Operation modes with icons
+    printf "${GREEN}🔄 Operation Modes${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}⚡ Remux:${NC}   ${YELLOW}Fast container change (preserves quality)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}🎯 Encode:${NC}  ${YELLOW}Full conversion with quality control${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}🗂️  Batch:${NC}   ${YELLOW}Process multiple files at once${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}🎵 Audio:${NC}   ${YELLOW}Extract audio tracks only${NC}\n"
+    echo ""
+    
+    # Original file handling
+    printf "${GREEN}🗂️  Original File Handling${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Keep:${NC}    ${YELLOW}Preserve original files after conversion${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Delete:${NC}  ${YELLOW}Remove original files after successful conversion${NC}\n"
+    echo ""
+    
+    # Quality presets
+    printf "${GREEN}🎚️  Quality Presets${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}High:${NC}    ${YELLOW}CRF 18 - Excellent quality, large files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Good:${NC}    ${YELLOW}CRF 23 - Great quality, balanced (recommended)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Medium:${NC}  ${YELLOW}CRF 28 - Good quality, smaller files${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Low:${NC}     ${YELLOW}CRF 32 - Acceptable quality, very small${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Custom:${NC}  ${YELLOW}Choose your own CRF value (0-51)${NC}\n"
+    echo ""
+    
+    # Professional presets (v1.3.0)
+    printf "${GREEN}🎯 Professional Presets${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Broadcast:${NC}    ${YELLOW}High quality for TV/broadcasting (CRF 18)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Cinema:${NC}       ${YELLOW}Film industry standard (CRF 16, BT.709)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Web:${NC}          ${YELLOW}Optimized for streaming (CRF 23, 1080p)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Mobile:${NC}       ${YELLOW}Optimized for mobile devices (CRF 28, 720p)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Archive:${NC}      ${YELLOW}Maximum quality preservation (CRF 12)${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Social Media:${NC} ${YELLOW}Square format for social platforms${NC}\n"
+    echo ""
+    
+    # Video filters (v1.3.0)
+    printf "${GREEN}🎨 Video Filters${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}Deinterlace:${NC}  ${YELLOW}Remove interlacing artifacts${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Denoise:${NC}      ${YELLOW}Reduce video noise (light/strong)${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}Scale:${NC}        ${YELLOW}Resize to specific resolution${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}Color:${NC}        ${YELLOW}Color correction and enhancement${NC}\n"
+    echo ""
+    
+    # Footer with link
+    printf "${GREEN}🌐 More Information${NC}\n"
+    printf "${CYAN}└─${NC} ${BLUE}${REPOSITORY}${NC}\n"
+    echo ""
+    
+    printf "${GREEN}Made with ${RED}❤️ ${GREEN} for the community${NC}\n"
+    echo ""
+}
+
+# Function to show version information
+show_version() {
+    local ffmpeg_version=$(ffmpeg -version 2>/dev/null | head -n1 | cut -d' ' -f3 || echo "Not found")
+    local jq_version=$(jq --version 2>/dev/null || echo "Not found")
+    local platform="$(uname -s) $(uname -m)"
+    
+    # Header with branding
+    echo ""
+    printf "${PURPLE}🎬 ${SCRIPT_NAME} v${VERSION}${NC}\n"
+    printf "${CYAN}Video. Simplified.${NC}\n"
+    echo ""
+    
+    printf "${GREEN}Repository:${NC}  ${YELLOW}${REPOSITORY}${NC}\n"
+    printf "${GREEN}License:${NC}     ${YELLOW}Unlicense (Public Domain)${NC}\n"
+    printf "${GREEN}Platform:${NC}    ${YELLOW}${platform}${NC}\n"
+    echo ""
+    
+    printf "${GREEN}⚡ Core Dependencies${NC}\n"
+    printf "${CYAN}┌─${NC} ${WHITE}FFmpeg:${NC}  ${YELLOW}${ffmpeg_version}${NC}\n"
+    printf "${CYAN}└─${NC} ${WHITE}jq:${NC}       ${YELLOW}${jq_version} (optional)${NC}\n"
+    echo ""
+    
+    printf "${GREEN}💡 Quick Start${NC}\n"
+    printf "${CYAN}vyn input.mkv output.mp4${NC}\n"
+    printf "${CYAN}vyn --help${NC}\n"
+    echo ""
+    
+    printf "${GREEN}🚀 Features:${NC}  ${YELLOW}Fast • Interactive • Professional${NC}\n"
+    printf "${GREEN}🎯 Modes:${NC}     ${YELLOW}Remux (fast) • Encode (quality)${NC}\n"
+    echo ""
+    
+    printf "${GREEN}Made with ${RED}❤️ ${GREEN} for the community${NC}\n"
+    echo ""
+}
+
+# Function to get file info
+get_file_info() {
+    local file="$1"
+    
+    print_color "$CYAN" "📁 File Information:"
+    
+    # For dry run with empty/invalid files, show basic info and continue
+    if [[ "$DRY_RUN" == true ]] && [[ ! -s "$file" ]]; then
+        print_fallback_info "$file"
+        return 0
+    fi
+    
+    # Try basic ffprobe first to see if it's a valid media file
+    if ! ffprobe -v quiet -show_entries format=duration -of csv="p=0" "$file" &>/dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            print_fallback_info "$file"
+            return 0
+        else
+            print_fallback_info "$file"
+            return 0
+        fi
+    fi
+    
+    # Try to get detailed info with jq, fallback to basic info if jq fails
+    if command -v jq &> /dev/null; then
+        local file_info
+        file_info=$(ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null)
+        
+        if [[ -n "$file_info" ]] && echo "$file_info" | jq empty 2>/dev/null; then
+            if ! echo "$file_info" | jq -r '
+                .format as $fmt |
+                (.streams[] | select(.codec_type=="video")) as $video |
+                (.streams[] | select(.codec_type=="audio")) as $audio |
+                "  📄 File: " + ($fmt.filename | split("/")[-1]) + "\n" +
+                "  📦 Container: " + $fmt.format_name + "\n" +
+                "  ⏱️  Duration: " + (if $fmt.duration then (($fmt.duration | tonumber) | strftime("%H:%M:%S")) else "Unknown" end) + "\n" +
+                "  💾 Size: " + (if $fmt.size then (($fmt.size | tonumber / 1024 / 1024) | floor | tostring) + " MB" else "Unknown" end) + "\n" +
+                (if $video then "  🎬 Video: " + $video.codec_name + " | " + ($video.width | tostring) + "x" + ($video.height | tostring) + " | " + (if $video.r_frame_rate then (($video.r_frame_rate | split("/") | (.[0] | tonumber) / (.[1] | tonumber)) | floor | tostring) + " fps" else "Unknown fps" end) else "  🎬 Video: No video stream found" end) +
+                (if $audio then "\n  🔊 Audio: " + $audio.codec_name + " | " + ($audio.channels | tostring) + " channels" else "\n  🔊 Audio: No audio stream found" end)
+            ' 2>/dev/null; then
+                print_fallback_info "$file"
+            fi
+        else
+            print_fallback_info "$file"
+        fi
+    else
+        print_fallback_info "$file"
+    fi
+    echo ""
+}
+
+# Fallback function for basic file info
+print_fallback_info() {
+    local file="$1"
+    echo "  📄 File: $(basename "$file")"
+    
+    if [[ -s "$file" ]]; then
+        echo "  💾 Size: $(ls -lh "$file" | awk '{print $5}')"
+        
+        if command -v ffprobe &> /dev/null; then
+            local duration
+            duration=$(ffprobe -v quiet -show_entries format=duration -of csv="p=0" "$file" 2>/dev/null)
+            if [[ -n "$duration" ]]; then
+                local seconds
+                seconds=$(echo "$duration" | awk '{print int($1)}')
+                local hours=$((seconds / 3600))
+                local minutes=$(((seconds % 3600) / 60))
+                local secs=$((seconds % 60))
+                printf "  ⏱️  Duration: %02d:%02d:%02d\n" "$hours" "$minutes" "$secs"
+            fi
+        fi
+    else
+        echo "  💾 Size: Empty file"
+    fi
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  ℹ️  Note: This is a test file for dry run mode"
+    fi
+}
+
+# Function to select operation mode
+select_operation_mode() {
+    echo ""
+    print_color $PURPLE "Select Operation Mode:"
+    echo "1) Remux (Fast - just change container, no re-encoding)"
+    echo "2) Encode (Slower - full conversion with quality options)"
+    echo ""
+    while true; do
+        read -r -p "Enter your choice (1-2): " choice
+        case $choice in
+            1)
+                OPERATION_MODE="remux"
+                print_color $GREEN "Selected: Remux (Fast conversion)"
+                break
+                ;;
+            2)
+                OPERATION_MODE="encode"
+                print_color $GREEN "Selected: Encode (Full conversion)"
+                break
+                ;;
+            *)
+                print_color $RED "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
+# Function to select original file handling
+select_original_file_action() {
+    echo ""
+    print_color $PURPLE "Original File Handling:"
+    echo "1) Keep original files after conversion"
+    echo "2) Delete original files after successful conversion"
+    echo ""
+    while true; do
+        read -r -p "Enter your choice (1-2): " choice
+        case $choice in
+            1)
+                DELETE_ORIGINAL=false
+                print_color $GREEN "Selected: Keep original files"
+                break
+                ;;
+            2)
+                DELETE_ORIGINAL=true
+                print_color $YELLOW "Selected: Delete original files after conversion"
+                print_warning "⚠️  Original files will be permanently deleted after successful conversion!"
+                break
+                ;;
+            *)
+                print_color $RED "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
+# Function to select quality for encoding
+select_quality() {
+    if [ "$OPERATION_MODE" = "encode" ]; then
+        echo ""
+        print_color $PURPLE "Select Video Quality:"
+        echo "1) High Quality (CRF 18 - Large file size)"
+        echo "2) Good Quality (CRF 23 - Balanced)"
+        echo "3) Medium Quality (CRF 28 - Smaller file)"
+        echo "4) Low Quality (CRF 32 - Very small file)"
+        echo "5) Custom CRF value"
+        echo ""
+        while true; do
+            read -r -p "Enter your choice (1-5): " quality_choice
+            case $quality_choice in
+                1)
+                    CRF_VALUE="18"
+                    print_color $GREEN "Selected: High Quality (CRF 18)"
+                    break
+                    ;;
+                2)
+                    CRF_VALUE="23"
+                    print_color $GREEN "Selected: Good Quality (CRF 23)"
+                    break
+                    ;;
+                3)
+                    CRF_VALUE="28"
+                    print_color $GREEN "Selected: Medium Quality (CRF 28)"
+                    break
+                    ;;
+                4)
+                    CRF_VALUE="32"
+                    print_color $GREEN "Selected: Low Quality (CRF 32)"
+                    break
+                    ;;
+                5)
+                    while true; do
+                        read -r -p "Enter CRF value (0-51, lower = better quality): " custom_crf
+                        if [[ "$custom_crf" =~ ^[0-9]+$ ]] && [ "$custom_crf" -ge 0 ] && [ "$custom_crf" -le 51 ]; then
+                            CRF_VALUE="$custom_crf"
+                            print_color $GREEN "Selected: Custom Quality (CRF $custom_crf)"
+                            break 2
+                        else
+                            print_color $RED "Invalid CRF value. Please enter a number between 0-51."
+                        fi
+                    done
+                    ;;
+                *)
+                    print_color $RED "Invalid choice. Please enter 1-5."
+                    ;;
+            esac
+        done
+    fi
+}
+
+# Function to format file size in human readable format
+format_file_size() {
+    local size="$1"
+    
+    if [[ "$size" -eq 0 ]]; then
+        echo "0 B"
+    elif [[ "$size" -lt 1024 ]]; then
+        echo "${size} B"
+    elif [[ "$size" -lt $((1024*1024)) ]]; then
+        echo "$((size/1024)) KB"
+    elif [[ "$size" -lt $((1024*1024*1024)) ]]; then
+        echo "$((size/1024/1024)) MB"
+    else
+        echo "$((size/1024/1024/1024)) GB"
+    fi
+}
+
+# Function to validate file format compatibility
+validate_file_format() {
+    local input="$1"
+    local output="$2"
+    
+    # Get file extension
+    local input_ext="${input##*.}"
+    local output_ext="${output##*.}"
+    
+    # Convert to lowercase
+    input_ext=$(echo "$input_ext" | tr '[:upper:]' '[:lower:]')
+    output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+    
+    # Define supported input formats
+    local supported_input="mp4 mkv avi mov webm m4v flv 3gp wmv mpg mpeg ts"
+    local supported_output="mp4 mkv avi mov webm m4v"
+    
+    # Check input format
+    if [[ ! " $supported_input " =~ " $input_ext " ]]; then
+        print_warning "⚠️  Input format '.$input_ext' may not be fully supported"
+        print_info "Supported input formats: $supported_input"
+    fi
+    
+    # Check output format
+    if [[ ! " $supported_output " =~ " $output_ext " ]]; then
+        print_warning "⚠️  Output format '.$output_ext' may not be optimal"
+        print_info "Recommended output formats: $supported_output"
+    fi
+    
+    return 0
+}
+
+# Function to estimate output file size for dry run
+estimate_output_size() {
+    local input="$1"
+    local operation_mode="$2"
+    local crf_value="$3"
+    local output_ext="$4"
+    
+    if [[ ! -s "$input" ]]; then
+        echo "Unknown (empty test file)"
+        return 0
+    fi
+    
+    local input_size
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        input_size=$(stat -f%z "$input" 2>/dev/null || echo "0")
+    else
+        input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    fi
+    
+    if [[ "$input_size" -eq 0 ]]; then
+        echo "Unknown"
+        return 0
+    fi
+    
+    local estimated_size=$input_size
+    
+    if [[ "$operation_mode" == "remux" ]]; then
+        # Remux: size usually stays very similar (±5%)
+        estimated_size=$input_size
+        echo "~$(( input_size / 1024 / 1024 )) MB (similar to input)"
+    else
+        # Encode: estimate based on CRF value and format using bash arithmetic
+        local compression_percent
+        case "$output_ext" in
+            "webm")
+                # WebM with VP9 is generally more efficient
+                case "$crf_value" in
+                    1[0-8]) compression_percent=70 ;;  # High quality - 70% of original
+                    1[9-5]) compression_percent=50 ;;  # Good quality - 50% of original
+                    2[6-2]) compression_percent=35 ;;  # Medium quality - 35% of original
+                    *) compression_percent=25 ;;       # Low quality - 25% of original
+                esac
+                ;;
+            *)
+                # H.264 compression estimates
+                case "$crf_value" in
+                    1[0-8]) compression_percent=80 ;;  # High quality - 80% of original
+                    1[9-5]) compression_percent=60 ;;  # Good quality - 60% of original
+                    2[6-2]) compression_percent=40 ;;  # Medium quality - 40% of original
+                    *) compression_percent=30 ;;       # Low quality - 30% of original
+                esac
+                ;;
+        esac
+        
+        estimated_size=$(( input_size * compression_percent / 100 ))
+        local estimated_mb=$((estimated_size / 1024 / 1024))
+        local input_mb=$((input_size / 1024 / 1024))
+        local savings=$(( 100 - compression_percent ))
+        
+        echo "~${estimated_mb} MB (estimated ${savings}% smaller)"
+    fi
+}
+do_remux() {
+    local input="$1"
+    local output="$2"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "🔍 DRY RUN: Remux operation preview"
+        print_color "$CYAN" "Would execute: ffmpeg -i \"$input\" -c copy \"$output\""
+        print_info "📊 Operation: Copy streams without re-encoding"
+        print_info "⚡ Expected speed: Very fast (seconds)"
+        print_info "🎯 Quality: Identical to source"
+        
+        # Show estimated output size
+        local output_ext="${output##*.}"
+        output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+        local estimated_size=$(estimate_output_size "$input" "remux" "" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
+        return 0
+    fi
+    
+    print_info "🚀 Starting remux operation..."
+    print_color "$CYAN" "Command: ffmpeg -i \"$input\" -c copy \"$output\""
+    echo ""
+    
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
+    # Run FFmpeg in background with progress bar
+    ffmpeg -i "$input" -c copy "$output" -y -loglevel error -stats -hide_banner > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Remuxing"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        print_success "✅ Remux completed successfully in ${duration}s!"
+        
+        # Show file size comparison
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
+        
+        # Delete original file if requested and not in dry run mode
+        if [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" != true ]]; then
+            if rm "$input" 2>/dev/null; then
+                print_info "🗑️  Original file deleted: $(basename "$input")"
+            else
+                print_warning "⚠️  Failed to delete original file: $(basename "$input")"
+            fi
+        elif [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" == true ]]; then
+            print_info "🔍 DRY RUN: Would delete original file: $(basename "$input")"
+        fi
+    else
+        echo ""
+        print_error "Remux operation failed!"
+        case $exit_code in
+            1)
+                print_info "FFmpeg encountered a general error. Check input file format and output path."
+                ;;
+            234)
+                print_info "FFmpeg encountered an issue with file access or invalid filename."
+                print_info "This often happens with special characters in filenames or permission issues."
+                ;;
+            *)
+                print_info "FFmpeg exited with code $exit_code."
+                ;;
+        esac
+        print_info "This might happen if the codecs are not compatible with the output container."
+        print_info "Try using encode mode instead."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
+        return 1
+    fi
+}
+
+# Function to perform encoding
+do_encode() {
+    local input="$1"
+    local output="$2"
+    
+    # Determine codec based on output format
+    local output_ext="${output##*.}"
+    local video_codec=""
+    local audio_codec=""
+    local extra_params=""
+    
+    # Convert extension to lowercase for comparison
+    output_ext=$(echo "$output_ext" | tr '[:upper:]' '[:lower:]')
+    
+    case "$output_ext" in
+        "mp4"|"m4v")
+            if [[ "$USE_GPU" == true && "$GPU_TYPE" == "nvenc" ]]; then
+                video_codec="h264_nvenc"
+                extra_params="-preset fast -rc vbr -cq $CRF_VALUE"
+            elif [[ "$USE_GPU" == true && "$GPU_TYPE" == "vaapi" ]]; then
+                video_codec="h264_vaapi"
+                extra_params="-vaapi_device /dev/dri/renderD128 -vf 'format=nv12,hwupload' -qp $CRF_VALUE"
+            else
+                video_codec="libx264"
+                extra_params="-movflags +faststart"  # Optimize for web streaming
+            fi
+            audio_codec="aac"
+            ;;
+        "webm")
+            if [[ "$USE_GPU" == true ]]; then
+                print_warning "GPU acceleration not widely supported for WebM, using software encoding"
+            fi
+            video_codec="libvpx-vp9"
+            audio_codec="libopus"
+            extra_params="-b:v 0 -b:a 128k"  # VBR for VP9
+            ;;
+        "mkv")
+            if [[ "$USE_GPU" == true && "$GPU_TYPE" == "nvenc" ]]; then
+                video_codec="h264_nvenc"
+                extra_params="-preset fast -rc vbr -cq $CRF_VALUE"
+            elif [[ "$USE_GPU" == true && "$GPU_TYPE" == "vaapi" ]]; then
+                video_codec="h264_vaapi"
+                extra_params="-vaapi_device /dev/dri/renderD128 -vf 'format=nv12,hwupload' -qp $CRF_VALUE"
+            else
+                video_codec="libx264"
+            fi
+            audio_codec="aac"
+            ;;
+        "avi")
+            if [[ "$USE_GPU" == true ]]; then
+                print_warning "GPU acceleration limited for AVI format, using software encoding"
+            fi
+            video_codec="libx264"
+            audio_codec="aac"
+            ;;
+        "mov")
+            if [[ "$USE_GPU" == true && "$GPU_TYPE" == "nvenc" ]]; then
+                video_codec="h264_nvenc"
+                extra_params="-preset fast -rc vbr -cq $CRF_VALUE -movflags +faststart"
+            elif [[ "$USE_GPU" == true && "$GPU_TYPE" == "vaapi" ]]; then
+                video_codec="h264_vaapi"
+                extra_params="-vaapi_device /dev/dri/renderD128 -vf 'format=nv12,hwupload' -qp $CRF_VALUE -movflags +faststart"
+            else
+                video_codec="libx264"
+                extra_params="-movflags +faststart"
+            fi
+            audio_codec="aac"
+            ;;
+        "flv")
+            if [[ "$USE_GPU" == true ]]; then
+                print_warning "GPU acceleration not supported for FLV format, using software encoding"
+            fi
+            video_codec="libx264"
+            audio_codec="aac"
+            ;;
+        "3gp")
+            if [[ "$USE_GPU" == true ]]; then
+                print_warning "GPU acceleration not supported for 3GP format, using software encoding"
+            fi
+            video_codec="libx264"
+            audio_codec="aac"
+            extra_params="-s 320x240"  # Mobile-friendly resolution
+            ;;
+        *)
+            video_codec="libx264"
+            audio_codec="aac"
+            print_warning "Unknown output format '$output_ext', using default codecs (H.264 + AAC)"
+            print_info "Supported formats: mp4, mkv, webm, avi, mov, flv, m4v, 3gp"
+            ;;
+    esac
+    
+    print_info "🎬 Starting encode operation..."
+    if [[ "$USE_GPU" == true ]]; then
+        print_color "$CYAN" "🎮 GPU Acceleration: $GPU_TYPE | 📼 Video Codec: $video_codec | 🔊 Audio Codec: $audio_codec | 🎯 CRF: $CRF_VALUE"
+    else
+        print_color "$CYAN" "💻 CPU Encoding | 📼 Video Codec: $video_codec | 🔊 Audio Codec: $audio_codec | 🎯 CRF: $CRF_VALUE"
+    fi
+    print_color "$CYAN" "Command: ffmpeg -i \"$input\" -c:v $video_codec -crf $CRF_VALUE -c:a $audio_codec $extra_params \"$output\""
+    echo ""
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "🔍 DRY RUN: Encode operation preview"
+        print_info "📊 Video Codec: $video_codec (CRF $CRF_VALUE)"
+        print_info "🔊 Audio Codec: $audio_codec"
+        print_info "⚡ Expected speed: Depends on file size and system"
+        print_info "🎯 Quality: Based on CRF setting"
+        if [[ -n "$extra_params" ]]; then
+            print_info "🔧 Extra parameters: $extra_params"
+        fi
+        
+        # Show estimated output size
+        local estimated_size=$(estimate_output_size "$input" "encode" "$CRF_VALUE" "$output_ext")
+        print_info "📦 Estimated output size: $estimated_size"
+        return 0
+    fi
+    
+    # Show conversion progress indicator
+    print_info "🚀 Starting video encoding..."
+    print_info "📊 Monitor the progress below:"
+    echo ""
+    
+    # Build the command with proper parameters
+    local cmd=(
+        ffmpeg -i "$input"
+    )
+    
+    # Add GPU-specific parameters before codec selection
+    if [[ "$USE_GPU" == true && "$GPU_TYPE" == "vaapi" ]]; then
+        cmd+=(-hwaccel vaapi -hwaccel_output_format vaapi)
+    elif [[ "$USE_GPU" == true && "$GPU_TYPE" == "nvenc" ]]; then
+        cmd+=(-hwaccel cuda -hwaccel_output_format cuda)
+    fi
+    
+    cmd+=(
+        -c:v "$video_codec"
+    )
+    
+    # Add CRF or quality parameter based on encoder type
+    if [[ "$video_codec" == *"nvenc"* ]]; then
+        cmd+=(-cq "$CRF_VALUE")
+    elif [[ "$video_codec" == *"vaapi"* ]]; then
+        cmd+=(-qp "$CRF_VALUE")
+    else
+        cmd+=(-crf "$CRF_VALUE")
+    fi
+    
+    cmd+=(
+        -c:a "$audio_codec"
+        -y
+        -loglevel info
+        -stats
+        -hide_banner
+    )
+    
+    # Add extra parameters if any
+    if [[ -n "$extra_params" ]]; then
+        # shellcheck disable=SC2206
+        cmd+=($extra_params)
+    fi
+    
+    cmd+=("$output")
+    
+    # Record start time for timing
+    local start_time=$(date +%s)
+    
+    # Run FFmpeg in background with progress bar
+    "${cmd[@]}" -loglevel error -stats > /tmp/vyn_output.log 2>&1 &
+    local ffmpeg_pid=$!
+    
+    # Show progress bar while FFmpeg runs
+    show_progress_bar "$(basename "$input") → $(basename "$output")" "$ffmpeg_pid" "Encoding"
+    
+    # Wait for FFmpeg to complete and check result
+    wait $ffmpeg_pid
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        local end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+        print_success "✅ Encoding completed successfully in ${duration}s!"
+        
+        # Show file size comparison if input exists
+        if [[ -f "$input" && -f "$output" ]]; then
+            show_file_comparison "$input" "$output"
+        fi
+        
+        # Delete original file if requested and not in dry run mode
+        if [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" != true ]]; then
+            if rm "$input" 2>/dev/null; then
+                print_info "🗑️  Original file deleted: $(basename "$input")"
+            else
+                print_warning "⚠️  Failed to delete original file: $(basename "$input")"
+            fi
+        elif [[ "$DELETE_ORIGINAL" == true && "$DRY_RUN" == true ]]; then
+            print_info "🔍 DRY RUN: Would delete original file: $(basename "$input")"
+        fi
+    else
+        echo ""
+        print_error "Encoding operation failed!"
+        case $exit_code in
+            1)
+                print_info "FFmpeg encountered a general error. Check input file format and codec compatibility."
+                ;;
+            234)
+                print_info "FFmpeg encountered an issue with file access or invalid filename."
+                print_info "This often happens with special characters in filenames or permission issues."
+                ;;
+            *)
+                print_info "FFmpeg exited with code $exit_code."
+                ;;
+        esac
+        print_info "Check the error messages above for details."
+        if [[ -f /tmp/vyn_output.log ]]; then
+            print_info "Error details:"
+            cat /tmp/vyn_output.log
+        fi
+        return 1
+    fi
+}
+
+# Function to show file size comparison
+show_file_comparison() {
+    local input="$1"
+    local output="$2"
+    
+    echo ""
+    print_info "📊 File Size Comparison:"
+    
+    # Get file sizes
+    local input_size=$(stat -c%s "$input" 2>/dev/null || echo "0")
+    local output_size=$(stat -c%s "$output" 2>/dev/null || echo "0")
+    
+    # Convert to human readable format
+    local input_readable=$(format_file_size "$input_size")
+    local output_readable=$(format_file_size "$output_size")
+    
+    print_info "   Original:  $input_readable"
+    print_info "   Converted: $output_readable"
+    
+    # Calculate compression ratio if both sizes are available
+    if [[ "$input_size" -gt 0 && "$output_size" -gt 0 ]]; then
+        local ratio=$((output_size * 100 / input_size))
+        local savings=$((100 - ratio))
+        
+        if [[ $ratio -lt 100 ]]; then
+            print_success "   💾 Space saved: ${savings}%% (compression ratio: ${ratio}%%)"
+        else
+            local increase=$((ratio - 100))
+            print_warning "   📈 File size increased by ${increase}%%"
+        fi
+    fi
+    echo ""
+}
+
+# Function to show conversion summary
+show_summary() {
+    local input="$1"
+    local output="$2"
+    
+    if [[ -f "$output" ]]; then
+        echo ""
+        print_color "$GREEN" "📊 Conversion Summary:"
+        
+        local input_size_human
+        local output_size_human
+        input_size_human=$(ls -lh "$input" | awk '{print $5}')
+        output_size_human=$(ls -lh "$output" | awk '{print $5}')
+        
+        echo "  📥 Input:  $input_size_human - $input"
+        echo "  📤 Output: $output_size_human - $output"
+        
+        # Calculate size difference with better cross-platform compatibility
+        local input_size
+        local output_size
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            input_size=$(stat -f%z "$input" 2>/dev/null)
+            output_size=$(stat -f%z "$output" 2>/dev/null)
+        else
+            # Linux and others
+            input_size=$(stat -c%s "$input" 2>/dev/null)
+            output_size=$(stat -c%s "$output" 2>/dev/null)
+        fi
+        
+        if [[ -n "$input_size" && -n "$output_size" ]]; then
+            local size_diff=$((output_size - input_size))
+            local percent_change
+            
+            if [[ "$input_size" -gt 0 ]]; then
+                percent_change=$(( (size_diff * 100) / input_size ))
+                
+                if [[ $size_diff -gt 0 ]]; then
+                    local size_diff_mb=$((size_diff / 1024 / 1024))
+                    print_warning "  📈 Size change: +${percent_change}%% (+${size_diff_mb}MB larger)"
+                elif [[ $size_diff -lt 0 ]]; then
+                    local size_diff_mb=$(( (-size_diff) / 1024 / 1024 ))
+                    print_success "  📉 Size change: ${percent_change}%% (-${size_diff_mb}MB smaller)"
+                else
+                    print_info "  ➡️  Size change: No change"
+                fi
+            fi
+        fi
+    fi
+}
+
+# Main function
+main() {
+    local save_config_flag=false
+    
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            --no-color)
+                USE_COLOR=false
+                init_colors
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --batch)
+                BATCH_MODE=true
+                shift
+                ;;
+            --audio-only)
+                AUDIO_ONLY=true
+                shift
+                ;;
+            --gpu)
+                USE_GPU=true
+                shift
+                ;;
+            --config)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    CONFIG_FILE="$2"
+                    shift 2
+                else
+                    print_error "Option --config requires an argument"
+                    exit 1
+                fi
+                ;;
+            --save-config)
+                save_config_flag=true
+                shift
+                ;;
+            --preset)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    PRESET_MODE=true
+                    PROFESSIONAL_PRESET="$2"
+                    shift 2
+                else
+                    print_error "Option --preset requires an argument (broadcast, cinema, web, mobile, archive, social)"
+                    exit 1
+                fi
+                ;;
+            --filters)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    VIDEO_FILTERS="$2"
+                    shift 2
+                else
+                    print_error "Option --filters requires an argument (deinterlace, denoise, scale, etc.)"
+                    exit 1
+                fi
+                ;;
+            --analytics)
+                ENABLE_ANALYTICS=true
+                shift
+                ;;
+            --show-analytics)
+                show_analytics_summary
+                exit 0
+                ;;
+            --list-plugins)
+                list_available_plugins
+                exit 0
+                ;;
+            --add-plugins)
+                interactive_plugin_management "add"
+                exit 0
+                ;;
+            --remove-plugins)
+                interactive_plugin_management "remove"
+                exit 0
+                ;;
+            --plugin)
+                if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                    PLUGIN_NAME="$2"
+                    shift 2
+                else
+                    print_error "Option --plugin requires a plugin name"
+                    exit 1
+                fi
+                ;;
+            -*)
+                print_error "Unknown option: $1"
+                echo "Use --help for usage information."
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    
+    # Show help if no arguments provided
+    if [[ $# -eq 0 && "$BATCH_MODE" == false ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Load configuration file
+    load_config
+    
+    # Initialize v1.3.0 features
+    if [[ "$ENABLE_ANALYTICS" == true ]]; then
+        init_analytics
+    fi
+    
+    if [[ "$PRESET_MODE" == true ]] || [[ -n "$PROFESSIONAL_PRESET" ]]; then
+        load_professional_presets
+        # Apply preset if specified via command line
+        if [[ -n "$PROFESSIONAL_PRESET" ]]; then
+            case "$PROFESSIONAL_PRESET" in
+                broadcast)
+                    CRF_VALUE="18"
+                    VIDEO_FILTERS="deinterlace"
+                    print_info "🎯 Applied Broadcast preset (CRF 18, deinterlaced)"
+                    ;;
+                cinema)
+                    CRF_VALUE="16"
+                    VIDEO_FILTERS="colorspace=bt709"
+                    print_info "🎯 Applied Cinema preset (CRF 16, BT.709 colorspace)"
+                    ;;
+                web|web_streaming)
+                    CRF_VALUE="23"
+                    VIDEO_FILTERS="scale=1920:1080"
+                    print_info "🎯 Applied Web Streaming preset (CRF 23, 1080p)"
+                    ;;
+                mobile)
+                    CRF_VALUE="28"
+                    VIDEO_FILTERS="scale=1280:720"
+                    print_info "🎯 Applied Mobile preset (CRF 28, 720p)"
+                    ;;
+                archive)
+                    CRF_VALUE="12"
+                    VIDEO_FILTERS="denoise=light"
+                    print_info "🎯 Applied Archive preset (CRF 12, light denoising)"
+                    ;;
+                social|social_media)
+                    CRF_VALUE="26"
+                    VIDEO_FILTERS="scale=1080:1080"
+                    print_info "🎯 Applied Social Media preset (CRF 26, square format)"
+                    ;;
+                *)
+                    print_warning "Unknown preset: $PROFESSIONAL_PRESET, using default settings"
+                    ;;
+            esac
+        fi
+    fi
+    
+    init_plugin_system
+    load_plugins
+    
+    # Check if required dependencies are installed
+    check_dependencies
+    
+    # Handle GPU acceleration setup
+    if [[ "$USE_GPU" == true ]]; then
+        if ! detect_gpu_acceleration; then
+            print_warning "GPU acceleration requested but not available, falling back to CPU"
+            USE_GPU=false
+        fi
+    fi
+    
+    # Handle batch mode
+    if [[ "$BATCH_MODE" == true ]]; then
+        setup_batch_processing
+        select_operation_mode
+        select_original_file_action
+        select_quality
+        
+        echo ""
+        print_color "$PURPLE" "🔧 Batch Conversion Details:"
+        echo "  📁 Input Dir:  $BATCH_INPUT_DIR"
+        echo "  📤 Output Dir: $BATCH_OUTPUT_DIR"
+        echo "  📦 Format:     $BATCH_FORMAT"
+        echo "  ⚙️  Mode:       $OPERATION_MODE"
+        if [[ "$OPERATION_MODE" == "encode" ]]; then
+            echo "  🎯 Quality:    CRF $CRF_VALUE"
+        fi
+        if [[ "$USE_GPU" == true ]]; then
+            echo "  🎮 GPU:        $GPU_TYPE"
+        fi
+        if [[ "$DELETE_ORIGINAL" == true ]]; then
+            echo "  🗑️  Originals:  Will be deleted after conversion"
+        else
+            echo "  📁 Originals:  Will be kept after conversion"
+        fi
+        
+        if [[ "$DRY_RUN" == true ]]; then
+            echo ""
+            print_info "This is a preview - no files will be modified"
+            read -r -p "Continue with preview? (Y/n): " confirm
+        else
+            echo ""
+            read -r -p "Proceed with batch conversion? (Y/n): " confirm
+        fi
+        
+        if [[ "$confirm" =~ ^[Nn]$ ]]; then
+            print_info "Batch conversion cancelled."
+            exit 0
+        fi
+        
+        process_batch_files "$BATCH_INPUT_DIR" "$BATCH_OUTPUT_DIR" "$BATCH_FORMAT"
+        
+        # Save configuration if requested
+        if [[ "$save_config_flag" == true ]]; then
+            save_config
+        fi
+        
+        exit 0
+    fi
+    
+    # Get input and output files
+    local input_file="$1"
+    local output_file="${2:-}"
+    
+    # Handle audio-only mode
+    if [[ "$AUDIO_ONLY" == true ]]; then
+        if [[ -z "$output_file" ]]; then
+            read -r -p "Enter output audio filename: " output_file
+            if [[ -z "$output_file" ]]; then
+                print_error "Output filename cannot be empty!"
+                exit 1
+            fi
+            # Strip surrounding quotes if user included them
+            output_file="${output_file%\"}"
+            output_file="${output_file#\"}"
+            output_file="${output_file%\'}"
+            output_file="${output_file#\'}"
+        fi
+        
+        # Validate input file
+        if [[ ! -f "$input_file" ]]; then
+            print_error "Input file '$input_file' does not exist!"
+            exit 1
+        fi
+        
+        # Show file information
+        get_file_info "$input_file"
+        
+        # Select original file handling
+        select_original_file_action
+        
+        # Confirm audio extraction
+        echo ""
+        print_color "$PURPLE" "🎵 Audio Extraction Details:"
+        echo "  📥 Input:     $input_file"
+        echo "  📤 Output:    $output_file"
+        echo "  ⚙️  Mode:      Audio-only extraction"
+        if [[ "$DELETE_ORIGINAL" == true ]]; then
+            echo "  🗑️  Original:  Will be deleted after extraction"
+        else
+            echo "  📁 Original:  Will be kept after extraction"
+        fi
+        
+        if [[ "$DRY_RUN" == true ]]; then
+            echo ""
+            print_info "This is a preview - no files will be modified"
+            read -r -p "Continue with preview? (Y/n): " confirm
+        else
+            echo ""
+            read -r -p "Proceed with audio extraction? (Y/n): " confirm
+        fi
+        
+        if [[ "$confirm" =~ ^[Nn]$ ]]; then
+            print_info "Audio extraction cancelled."
+            exit 0
+        fi
+        
+        do_audio_extract "$input_file" "$output_file"
+        
+        # Save configuration if requested
+        if [[ "$save_config_flag" == true ]]; then
+            save_config
+        fi
+        
+        exit 0
+    fi
+    
+    # Validate input file (allow directories for certain plugins)
+    if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+        # These plugins accept both files and directories
+        if [[ ! -e "$input_file" ]]; then
+            print_error "Input path '$input_file' does not exist!"
+            exit 1
+        fi
+    else
+        # Normal operation requires a file
+        if [[ ! -f "$input_file" ]]; then
+            print_error "Input file '$input_file' does not exist!"
+            exit 1
+        fi
+    fi
+    
+    # Check if input file/directory is readable
+    if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+        # For directory-based plugins, check permissions
+        if [[ ! -r "$input_file" ]]; then
+            print_error "Path '$input_file' is not readable!"
+            print_info "Check permissions."
+            exit 1
+        fi
+    else
+        # Normal file readability check
+        if [[ ! -r "$input_file" ]]; then
+            print_error "Input file '$input_file' is not readable!"
+            print_info "Check file permissions or if the file is being used by another process."
+            exit 1
+        fi
+    fi
+    
+    # If output file not provided, prompt for it (skip for directory-based plugins)
+    if [[ -z "$output_file" ]]; then
+        if [[ -n "$PLUGIN_NAME" && ("$PLUGIN_NAME" == "vimeo-uploader" || "$PLUGIN_NAME" == "quality-analyzer") ]]; then
+            # These plugins don't need an output file
+            output_file=""
+        else
+            echo ""
+            read -r -p "Enter output filename: " output_file
+            if [[ -z "$output_file" ]]; then
+                print_error "Output filename cannot be empty!"
+                exit 1
+            fi
+            # Strip surrounding quotes if user included them
+            output_file="${output_file%\"}"
+            output_file="${output_file#\"}"
+            output_file="${output_file%\'}"
+            output_file="${output_file#\'}"
+        fi
+    fi
+    
+    # Validate output directory exists and is writable (skip for directory-based plugins)
+    if [[ -n "$output_file" ]]; then
+        local output_dir
+        output_dir="$(dirname "$output_file")"
+        if [[ ! -d "$output_dir" ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                print_info "Would create directory: $output_dir"
+            else
+                print_info "Creating output directory: $output_dir"
+                if ! mkdir -p "$output_dir" 2>/dev/null; then
+                    print_error "Failed to create output directory '$output_dir'!"
+                    print_info "Check parent directory permissions."
+                    exit 1
+                fi
+                print_success "✅ Directory created successfully"
+            fi
+        fi
+    fi
+    
+    # Check output directory writable (skip for directory-based plugins)
+    if [[ -n "$output_file" ]] && [[ ! "$DRY_RUN" == true ]] && [[ ! -w "$output_dir" ]]; then
+        print_error "Output directory '$output_dir' is not writable!"
+        print_info "Check directory permissions."
+        exit 1
+    fi
+    
+    # Check if output file already exists (skip for directory-based plugins)
+    if [[ -n "$output_file" ]] && [[ -f "$output_file" ]]; then
+        echo ""
+        print_warning "Output file '$output_file' already exists!"
+        read -r -p "Do you want to overwrite it? (y/N): " overwrite
+        if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
+            print_info "Conversion cancelled."
+            exit 0
+        fi
+    fi
+    
+    # Show file information (skip for directory-based plugins)
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
+        get_file_info "$input_file"
+        
+        # Validate file format compatibility
+        echo ""
+        validate_file_format "$input_file" "$output_file"
+        echo ""
+    fi
+    
+    # Select operation mode (skip for directory-based plugins)
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
+        select_operation_mode
+        
+        # Select original file handling
+        select_original_file_action
+        
+        # Select quality if encoding
+        select_quality
+    fi
+    
+    # Confirm operation (skip for directory-based plugins)
+    if [[ -z "$PLUGIN_NAME" || ("$PLUGIN_NAME" != "vimeo-uploader" && "$PLUGIN_NAME" != "quality-analyzer") ]]; then
+        echo ""
+        if [[ "$DRY_RUN" == true ]]; then
+            print_color "$BLUE" "🔍 DRY RUN - Preview Mode"
+        else
+            print_color "$PURPLE" "🔧 Conversion Details:"
+        fi
+        echo "  📥 Input:     $input_file"
+        echo "  📤 Output:    $output_file"
+        echo "  ⚙️  Mode:      $OPERATION_MODE"
+        if [[ "$OPERATION_MODE" == "encode" ]]; then
+            echo "  🎯 Quality:   CRF $CRF_VALUE"
+        fi
+        if [[ "$USE_GPU" == true ]]; then
+            echo "  🎮 GPU:       $GPU_TYPE"
+        fi
+        if [[ "$DELETE_ORIGINAL" == true ]]; then
+            echo "  🗑️  Original:  Will be deleted after conversion"
+        else
+            echo "  📁 Original:  Will be kept after conversion"
+        fi
+        if [[ "$DRY_RUN" == true ]]; then
+            echo ""
+            print_info "This is a preview - no files will be modified"
+            read -r -p "Continue with preview? (Y/n): " confirm
+        else
+            echo ""
+            read -r -p "Proceed with conversion? (Y/n): " confirm
+        fi
+        if [[ "$confirm" =~ ^[Nn]$ ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                print_info "Preview cancelled."
+            else
+                print_info "Conversion cancelled."
+            fi
+            exit 0
+        fi
+    fi
+    
+    # Record start time
+    local start_time
+    start_time=$(date +%s)
+    
+    # Handle plugin execution if specified
+    if [[ -n "$PLUGIN_NAME" ]]; then
+        if execute_plugin_conversion "$input_file" "$output_file" "$PLUGIN_NAME"; then
+            local end_time
+            end_time=$(date +%s)
+            local duration=$((end_time - start_time))
+            
+            # Show summary for plugin conversion
+            show_summary "$input_file" "$output_file"
+            
+            # Log analytics if enabled
+            if [[ "$ENABLE_ANALYTICS" == true ]]; then
+                log_conversion_analytics "$input_file" "$output_file" "$duration" "plugin" "$PLUGIN_NAME"
+            fi
+            
+            # Format duration nicely
+            local hours=$((duration / 3600))
+            local minutes=$(((duration % 3600) / 60))
+            local seconds=$((duration % 60))
+            
+            if [[ $hours -gt 0 ]]; then
+                print_success "🎉 Plugin conversion completed in ${hours}h ${minutes}m ${seconds}s!"
+            elif [[ $minutes -gt 0 ]]; then
+                print_success "🎉 Plugin conversion completed in ${minutes}m ${seconds}s!"
+            else
+                print_success "🎉 Plugin conversion completed in ${seconds}s!"
+            fi
+            
+            # Save configuration if requested
+            if [[ "$save_config_flag" == true ]]; then
+                save_config
+            fi
+            
+            exit 0
+        else
+            print_error "Plugin conversion failed!"
+            exit 1
+        fi
+    fi
+    
+    # Perform conversion or preview
+    if [[ "$OPERATION_MODE" == "remux" ]]; then
+        do_remux "$input_file" "$output_file"
+    else
+        do_encode "$input_file" "$output_file"
+    fi
+    
+    # Skip summary and timing for dry run
+    if [[ "$DRY_RUN" == true ]]; then
+        print_success "🔍 Dry run completed successfully!"
+        print_info "Use the same command without --dry-run to perform the actual conversion."
+        exit 0
+    fi
+    
+    # Calculate duration
+    local end_time
+    local duration
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    
+    # Show summary
+    show_summary "$input_file" "$output_file"
+    
+    # Log analytics if enabled
+    if [[ "$ENABLE_ANALYTICS" == true ]]; then
+        local conversion_type="$OPERATION_MODE"
+        if [[ "$USE_GPU" == true ]]; then
+            conversion_type="${conversion_type}_gpu"
+        fi
+        if [[ "$PRESET_MODE" == true ]]; then
+            conversion_type="${conversion_type}_preset_${PROFESSIONAL_PRESET}"
+        fi
+        log_conversion_analytics "$input_file" "$output_file" "$duration" "$conversion_type" ""
+    fi
+    
+    # Format duration nicely
+    local hours=$((duration / 3600))
+    local minutes=$(((duration % 3600) / 60))
+    local seconds=$((duration % 60))
+    
+    if [[ $hours -gt 0 ]]; then
+        print_success "🎉 Conversion completed in ${hours}h ${minutes}m ${seconds}s!"
+    elif [[ $minutes -gt 0 ]]; then
+        print_success "🎉 Conversion completed in ${minutes}m ${seconds}s!"
+    else
+        print_success "🎉 Conversion completed in ${seconds}s!"
+    fi
+    
+    # Save configuration if requested
+    if [[ "$save_config_flag" == true ]]; then
+        save_config
+    fi
+}
+
+# Run main function with all arguments
+main "$@"

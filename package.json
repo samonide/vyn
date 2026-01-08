@@ -1,13 +1,22 @@
 {
   "name": "vyn",
-  "version": "1.4.0-dev",
-  "description": "Vyn - A powerful, fast, and intuitive video format converter using FFmpeg with interactive CLI",
-  "main": "vyn",
+  "version": "1.4.0",
+  "description": "Professional video converter for the command line with FFmpeg, featuring presets, GPU acceleration, plugins, and batch processing",
+  "main": "bin/vyn",
+  "bin": {
+    "vyn": "./bin/vyn"
+  },
+  "directories": {
+    "bin": "./bin",
+    "doc": "./docs",
+    "test": "./tests"
+  },
   "scripts": {
     "install": "./install-vyn.sh",
-    "test": "echo 'No tests specified yet'",
-    "help": "./vyn --help",
-    "version": "./vyn --version"
+    "test": "cd tests && ./run_tests.sh",
+    "lint": "shellcheck bin/vyn plugins/*.sh",
+    "help": "./bin/vyn --help",
+    "version": "./bin/vyn --version"
   },
   "repository": {
     "type": "git",

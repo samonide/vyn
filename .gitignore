@@ -48,6 +48,11 @@ vyn_temp*
 # Output files from testing
 output/
 converted/
+
+# Development planning (internal use only)
+ROADMAP.md
+QUICKSTART-DEV.md
+docs/Refactoring-Comparison.md
 test_output/
 vyn_output/
 converted_videos/
