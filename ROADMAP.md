@@ -53,6 +53,7 @@ src/
 - [x] Update `bin/vyn` to source modules
 - [x] Test all functionality after split
 - [x] Update documentation
+- [x] Add self-update command (`vyn --update`)
 
 **Benefits:**
 - Easier maintenance and debugging
@@ -92,33 +93,70 @@ tests/
 
 ## 🎨 Short-term Features (v1.5.0 - v1.6.0)
 
-### Phase 2: Enhanced Features (v1.5.x)
+### Phase 2: Plugin System Enhancement (v1.5.1)
+**Timeline**: 2-3 weeks  
+**Priority**: HIGH  
+**Status**: 🟡 In Planning
+
+#### 2.1 Plugin Discovery & Management
+- [ ] Plugin search functionality (`--plugin search`)
+- [ ] Plugin info command (`--plugin info <name>`)
+- [ ] Plugin update system (`--plugin check-updates`, `--plugin update`)
+- [ ] Plugin dependency management
+- [ ] Better error messages and validation
+
+#### 2.2 Plugin Development Tools
+- [ ] Plugin template generator (`--plugin create <name>`)
+- [ ] Plugin testing framework (`--plugin test <file>`)
+- [ ] Plugin validation before installation
+- [ ] Standardized plugin API (hooks, helpers)
+
+#### 2.3 Plugin Configuration
+- [ ] Per-plugin configuration files
+- [ ] Plugin settings management
+- [ ] Persistent plugin state
+
+#### 2.4 New Plugins
+- [ ] YouTube Uploader (OAuth, playlists)
+- [ ] Thumbnail Generator (multi-frame, grid)
+- [ ] Video Splitter (scene detection)
+- [ ] Audio Enhancer (noise reduction)
+- [ ] Watermark Tool (image/text overlays)
+
+**Documentation:**
+- [x] Plugin improvement plan: `docs/Plugin-System-Improvements.md`
+- [ ] Enhanced plugin development guide
+- [ ] Plugin registry/catalog
+
+---
+
+### Phase 3: Advanced Features (v1.5.x)
 **Timeline**: 1-2 months  
 **Priority**: MEDIUM  
-**Status**: 🟡 Ready to Start
+**Status**: 🔴 Planned
 
-#### 2.1 Advanced Codec Support
+#### 3.1 Advanced Codec Support
 - [ ] AV1 encoding support
 - [ ] VP9 optimization
 - [ ] HEVC/H.265 improvements
 - [ ] HDR video handling
 - [ ] 10-bit color depth support
 
-#### 2.2 Subtitle Management
+#### 3.2 Subtitle Management
 - [ ] Extract subtitles from videos
 - [ ] Embed subtitle files
 - [ ] Auto-detect subtitle tracks
 - [ ] Subtitle format conversion
 - [ ] Burn-in subtitle option
 
-#### 2.3 Metadata Enhancement
+#### 3.3 Metadata Enhancement
 - [ ] Preserve all metadata tags
 - [ ] Edit metadata during conversion
 - [ ] Batch metadata editing
 - [ ] Chapter marker support
 - [ ] Cover art/thumbnail embedding
 
-#### 2.4 Advanced Filters
+#### 3.4 Advanced Filters
 - [ ] More denoising algorithms
 - [ ] Advanced color grading
 - [ ] Stabilization filters
@@ -128,22 +166,15 @@ tests/
 
 ---
 
-## 🔌 Plugin System Expansion (v1.6.0)
+## 🔌 Extended Plugin Ecosystem (v1.6.0)
 
-### Phase 3: Plugin Ecosystem
+### Phase 4: Advanced Plugin Features
 **Timeline**: 2-3 months  
-**Priority**: MEDIUM-HIGH
+**Priority**: MEDIUM
 
-#### 3.1 More Upload Plugins
+#### 4.1 Additional Upload Plugins
 **Priority Order:**
-1. **YouTube Uploader** 🎥
-   - OAuth authentication
-   - Playlist management
-   - Privacy settings
-   - Thumbnail upload
-   - Description templates
-
-2. **Google Drive Uploader** ☁️
+1. **Google Drive Uploader** ☁️
    - Folder organization
    - Sharing settings
    - Batch upload
@@ -154,12 +185,17 @@ tests/
    - Shared link generation
    - Folder sync
 
-4. **AWS S3 Uploader** 🚀
+2. **AWS S3 Uploader** 🚀
    - Bucket management
    - CDN integration
    - Access control
 
-#### 3.2 Processing Plugins
+3. **FTP/SFTP Uploader** 📡
+   - Multiple server support
+   - Secure transfer
+   - Resume capability
+
+#### 4.2 Advanced Processing Plugins
 1. **Thumbnail Generator** 🖼️
    - Multiple thumbnail extraction
    - Custom timestamps
@@ -178,13 +214,13 @@ tests/
    - EQ presets
    - Compression
 
-4. **Watermark Tool** 💧
-   - Image watermarks
-   - Text overlays
-   - Position presets
-   - Opacity control
+4. **Subtitle Tools** 📝
+   - Extract/embed subtitles
+   - Format conversion
+   - Auto-sync
+   - Burn-in options
 
-#### 3.3 Analysis Plugins
+#### 4.3 Extended Analysis Plugins
 1. **Quality Comparator** 📊
    - PSNR/SSIM metrics
    - Visual comparison
@@ -205,32 +241,39 @@ tests/
 
 ## 🚀 Advanced Features (v2.x)
 
-### Phase 4: Enterprise Features
+### Phase 5: Enterprise Features
 **Timeline**: 6+ months  
 **Priority**: LOW  
 **Status**: 🔴 Future
 
-#### 5.1 Distributed Processing
+#### 5.1 Plugin Security & Community
+- [ ] Plugin verification (SHA256 checksums)
+- [ ] Digital signatures for official plugins
+- [ ] Community plugin repository
+- [ ] Plugin ratings and reviews
+- [ ] Automated security scanning
+
+#### 5.2 Distributed Processing
 - [ ] Multi-machine processing
 - [ ] Load balancing
 - [ ] Job distribution
 - [ ] Cluster management
 - [ ] Fault tolerance
 
-#### 5.2 Cloud Integration
+#### 5.3 Cloud Integration
 - [ ] Cloud storage backends
 - [ ] Remote processing
 - [ ] Serverless functions
 - [ ] Auto-scaling
 
-#### 5.3 AI-Powered Features
+#### 5.4 AI-Powered Features
 - [ ] AI upscaling
 - [ ] Smart scene detection
 - [ ] Automatic optimization
 - [ ] Content-aware encoding
 - [ ] Quality prediction
 
-#### 5.4 Streaming Support
+#### 5.5 Streaming Support
 - [ ] HLS segmentation
 - [ ] DASH support
 - [ ] Adaptive bitrate
@@ -246,19 +289,27 @@ v1.4.1 ✅ - Refactored structure
    ├─> v1.5.0 ✅ (Completed Jan 10, 2026)
    │   ├── Modular architecture (8 modules)
    │   ├── Test suite (52 tests)
+   │   ├── Self-update command
    │   └── Comprehensive documentation
    │
-   ├─> v1.5.x (2-3 months)
-   │   ├── Advanced codecs
+   ├─> v1.5.1 (2-3 weeks) 🟡 NEXT
+   │   ├── Enhanced plugin system
+   │   ├── Plugin search & updates
+   │   ├── Plugin dev tools
+   │   └── 5+ new plugins
+   │
+   ├─> v1.5.x (1-2 months)
+   │   ├── Advanced codecs (AV1, HEVC)
    │   ├── Subtitle support
    │   └── Enhanced filters
    │
    ├─> v1.6.0 (3-4 months)
-   │   ├── Plugin expansion
-   │   ├── YouTube uploader
-   │   └── More processing tools
+   │   ├── Extended plugin ecosystem
+   │   ├── Cloud uploaders
+   │   └── Advanced processing tools
    │
    └─> v2.x (6+ months)
+       ├── Plugin security & community
        ├── Cloud integration
        ├── AI features
        └── Enterprise tools
@@ -310,44 +361,49 @@ v1.4.1 ✅ - Refactored structure
 
 ---
 
-## 🎯 Immediate Next Steps (This Week)
+## 🎯 Immediate Next Steps (v1.5.1)
 
-### Week 1: Foundation
-```bash
-# Day 1-2: Start modularization
-- [ ] Create src/utils.sh with helper functions
-- [ ] Create src/config.sh with config management
-- [ ] Test extracted functions
+### Week 1-2: Plugin System Enhancement
+**Goal**: Enhance plugin discovery, management, and development
 
-# Day 3-4: Core modules
-- [ ] Create src/presets.sh
-- [ ] Create src/gpu.sh
-- [ ] Update bin/vyn to source modules
+**Tasks:**
+1. 🔴 Add plugin search functionality
+   - Search by category, tags, description
+   - Filter and display results
+   
+2. 🔴 Add plugin info command
+   - Show detailed plugin information
+   - Display requirements and setup
+   
+3. 🔴 Implement plugin update system
+   - Check for plugin updates
+   - Update individual or all plugins
+   - Version comparison
+   
+4. 🔴 Create plugin template generator
+   - Generate plugin from template
+   - Include documentation template
+   - Standardized structure
+   
+5. 🔴 Add plugin testing framework
+   - Validate plugin structure
+   - Check dependencies
+   - Test error handling
 
-# Day 5-7: Testing
-- [ ] Set up test framework
-- [ ] Write first unit tests
-- [ ] Document new structure
-```
+### Week 3-4: New Plugins Development
+**Goal**: Create 5 new high-value plugins
 
-### Week 2: Advanced Modules
-```bash
-# Day 1-3: Remaining modules
-- [ ] Create src/plugins.sh
-- [ ] Create src/analytics.sh
-- [ ] Create src/batch.sh
-- [ ] Create src/filters.sh
+**Priority Plugins:**
+1. 🔴 YouTube Uploader
+2. 🔴 Thumbnail Generator
+3. 🔴 Video Splitter
+4. 🔴 Audio Enhancer
+5. 🔴 Watermark Tool
 
-# Day 4-5: Integration
-- [ ] Integrate all modules
-- [ ] Test complete system
-- [ ] Fix any issues
-
-# Day 6-7: Documentation
-- [ ] Update all documentation
-- [ ] Create module documentation
-- [ ] Test installation process
-```
+**Documentation:**
+- Update plugins/README.md
+- Create plugin development guide
+- Add plugin registry documentation
 
 ---
 
@@ -452,34 +508,44 @@ v1.4.1 ✅ - Refactored structure
 
 ---
 
-## ✅ Current Sprint (January 2026)
+## ✅ Completed Sprints
 
-### Week 1-2: Modularization ✅ COMPLETE
+### January 2026 - Phase 1: Modularization ✅ COMPLETE
 **Goal**: Split monolithic script into modules
 
-**Tasks:**
-1. ✅ Refactor project structure
-2. ✅ Extract utils.sh
-3. ✅ Extract presets.sh
-4. ✅ Extract plugins.sh
-5. ✅ Create test framework (52 tests)
-6. ✅ Extract all 8 modules
-7. ✅ Update documentation
+**Completed:**
+1. ✅ Refactored project structure
+2. ✅ Extracted 8 modules (utils, config, gpu, presets, analytics, plugins, batch, filters)
+3. ✅ Created test suite (52 tests)
+4. ✅ Added self-update command (`vyn --update`)
+5. ✅ Comprehensive documentation
+6. ✅ Cleaned up .gitignore
 
-**Definition of Done:**
-- ✅ All functions work identically
-- ✅ No regression in features
-- ✅ Documentation updated
-- ✅ Tests passing (52/52)
+**Results:**
+- 40% code reduction in main script
+- 100% test pass rate
+- Professional project structure
+- Easy to maintain and extend
 
-### Week 3-4: Enhanced Features 🟡 IN PROGRESS
-**Goal**: Add advanced codec support, subtitles, and metadata
+---
+
+## 🎯 Current Sprint (January-February 2026)
+
+### Week 3-4: Plugin System Enhancement 🟡 IN PROGRESS
+**Goal**: Advanced plugin discovery, management, and development tools
 
 **Next Tasks:**
-1. 🔴 AV1 encoding support
-2. 🔴 Subtitle management
-3. 🔴 Metadata enhancement
-4. 🔴 Advanced filters
+1. 🔴 Plugin search functionality
+2. 🔴 Plugin info/details command
+3. 🔴 Plugin update checker
+4. 🔴 Plugin template generator
+5. 🔴 Plugin testing framework
+
+**Definition of Done:**
+- Users can search and discover plugins easily
+- Plugin updates are automatic
+- Creating new plugins takes < 30 minutes
+- All plugins have comprehensive tests
 
 ---
 
