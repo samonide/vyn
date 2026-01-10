@@ -1,12 +1,3 @@
-# Node modules
-node_modules/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -23,13 +14,23 @@ Thumbs.db
 *.swo
 *~
 
+# Logs
+*.log
+
 # Temporary files
 *.tmp
 *.temp
 .tmp/
 .temp/
 
-# Test files
+# Test output
+test_output/
+vyn_output/
+converted_videos/
+output/
+converted/
+
+# Test video files
 test_video.*
 test-video.mp4
 sample_*.*
@@ -38,52 +39,17 @@ sample_*.*
 # Backup files
 *.bak
 *.backup
-*~
 
 # FFmpeg temporary files
 ffmpeg_*
 *.ffmpeg
 vyn_temp*
 
-# Output files from testing
-output/
-converted/
-
-# Development planning (internal use only)
-ROADMAP.md
-QUICKSTART-DEV.md
-docs/Refactoring-Comparison.md
-test_output/
-vyn_output/
-converted_videos/
-
 # Local environment files
 .env
 .env.local
 
-# Build artifacts
-dist/
-build/
-
-# Package files
-*.deb
-*.rpm
-*.pkg
-*.dmg
-
-# Archive files
+# Archive files (generated during distribution)
 *.zip
 *.tar.gz
 *.tar.bz2
-*.rar
-
-# Video files (for testing)
-# Uncomment if you don't want to track test videos
-# *.mp4
-# *.mkv
-# *.avi
-# *.mov
-# *.webm
-# *.flv
-# *.wmv
-# *.m4v

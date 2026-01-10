@@ -169,6 +169,7 @@ show_help() {
     printf "${GREEN}⚙️  Options${NC}\n"
     printf "${CYAN}┌─${NC} ${WHITE}-h, --help${NC}       ${YELLOW}Show this help message${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}-v, --version${NC}    ${YELLOW}Show version and dependencies${NC}\n"
+    printf "${CYAN}├─${NC} ${WHITE}--update${NC}         ${YELLOW}Update Vyn to latest version from GitHub${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}--no-color${NC}       ${YELLOW}Disable colored output${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}--dry-run${NC}        ${YELLOW}Preview operations safely${NC}\n"
     printf "${CYAN}├─${NC} ${WHITE}--batch${NC}          ${YELLOW}Batch processing mode${NC}\n"
@@ -283,6 +284,116 @@ show_version() {
     
     printf "${GREEN}Made with ${RED}❤️ ${GREEN} for the community${NC}\n"
     echo ""
+}
+
+# Function to update Vyn to latest version
+update_vyn() {
+    print_color "$CYAN" "🔄 Updating Vyn to latest version..."
+    echo ""
+    
+    # Check if git is installed
+    if ! command -v git &> /dev/null; then
+        print_error "Git is required for updates but not found."
+        echo "Please install git and try again."
+        exit 1
+    fi
+    
+    # Determine installation directory
+    local script_path="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+    local install_dir="$(dirname "$(dirname "$script_path")")"
+    
+    print_info "Installation directory: $install_dir"
+    
+    # Check if we're in a git repository
+    if [[ ! -d "$install_dir/.git" ]]; then
+        print_error "Not a git repository. Cannot auto-update."
+        echo ""
+        echo "To update manually:"
+        echo "1. Download latest version: curl -O https://raw.githubusercontent.com/samonide/vyn/main/install-vyn.sh"
+        echo "2. Run installer: bash install-vyn.sh"
+        exit 1
+    fi
+    
+    # Save current directory
+    local original_dir="$PWD"
+    
+    # Navigate to installation directory
+    cd "$install_dir" || {
+        print_error "Cannot access installation directory"
+        exit 1
+    }
+    
+    # Check for uncommitted changes
+    if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+        print_warning "You have local modifications:"
+        git status --short
+        echo ""
+        read -p "Continue with update? This will stash your changes (y/N): " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Update cancelled."
+            cd "$original_dir"
+            exit 0
+        fi
+        git stash save "Auto-stash before vyn update" >/dev/null 2>&1
+    fi
+    
+    # Fetch latest changes
+    print_info "Fetching latest changes from GitHub..."
+    if ! git fetch origin main 2>/dev/null; then
+        print_error "Failed to fetch updates from GitHub."
+        cd "$original_dir"
+        exit 1
+    fi
+    
+    # Check if update is available
+    local current_commit=$(git rev-parse HEAD)
+    local latest_commit=$(git rev-parse origin/main)
+    
+    if [[ "$current_commit" == "$latest_commit" ]]; then
+        print_success "✓ Already up to date! (v${VERSION})"
+        cd "$original_dir"
+        exit 0
+    fi
+    
+    # Show what will be updated
+    echo ""
+    print_info "Changes in this update:"
+    git log --oneline --decorate --color=always HEAD..origin/main | head -n 10
+    echo ""
+    
+    # Perform update
+    print_info "Applying updates..."
+    if git pull origin main; then
+        echo ""
+        print_success "✓ Successfully updated Vyn!"
+        echo ""
+        
+        # Show new version
+        local new_version=$(grep '^VERSION=' "$install_dir/bin/vyn" | cut -d'=' -f2 | tr -d '"' | head -n1)
+        print_color "$GREEN" "Updated from v${VERSION} to v${new_version}"
+        echo ""
+        
+        # Check if installer needs to run
+        if [[ -f "$install_dir/install-vyn.sh" ]]; then
+            read -p "Run post-update setup? (recommended) (Y/n): " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                bash "$install_dir/install-vyn.sh" --update-only
+            fi
+        fi
+        
+        print_info "Restart your terminal or run: source ~/.bashrc"
+    else
+        print_error "Update failed. Please check the errors above."
+        echo ""
+        echo "You can try manual update:"
+        echo "  cd $install_dir && git pull origin main"
+        cd "$original_dir"
+        exit 1
+    fi
+    
+    cd "$original_dir"
 }
 
 # Function to get file info
@@ -986,6 +1097,10 @@ main() {
                 ;;
             -v|--version)
                 show_version
+                exit 0
+                ;;
+            --update)
+                update_vyn
                 exit 0
                 ;;
             --no-color)
