@@ -49,6 +49,9 @@ vyn_temp*
 .env
 .env.local
 
+# Development planning (internal use)
+ROADMAP.md
+
 # Archive files (generated during distribution)
 *.zip
 *.tar.gz
